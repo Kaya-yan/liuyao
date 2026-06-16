@@ -5,6 +5,11 @@ import { calculateAllLiuqin } from '@/lib/hexagram/liuqin';
 import { calculateLiushen } from '@/lib/hexagram/liushen';
 import { palaces } from '@/lib/hexagram/palaces';
 import { LIUSHEN_MEANINGS } from '@/lib/hexagram/liushen';
+import { findFeifu } from '@/lib/hexagram/feifu';
+import { calculateKongwang, isKongwang, getKongwangText } from '@/lib/hexagram/kongwang';
+import { calculateHugua } from '@/lib/hexagram/huyao';
+import { analyzeDongYao, checkFanyinFuyin } from '@/lib/hexagram/dongyao';
+import { tianganToWuxing, getWuxingStrength } from '@/lib/engine/wuxing';
 
 /**
  * 解读文案生成引擎
@@ -109,15 +114,10 @@ const CATEGORY_NAMES: Record<CategoryType, string> = {
 
 // ===== 核心函数 =====
 
-function getWuxingFromTiangan(tiangan: string): string {
-  const map: Record<string, string> = { '甲': '木', '乙': '木', '丙': '火', '丁': '火', '戊': '土', '己': '土', '庚': '金', '辛': '金', '壬': '水', '癸': '水' };
-  return map[tiangan] || '土';
-}
-
-function determineYongShen(category: CategoryType): LiuQinType {
+function determineYongShen(category: CategoryType, gender: 'male' | 'female' = 'male'): LiuQinType {
   switch (category) {
     case 'caiyun': return '妻财';
-    case 'zhengyuan': return '妻财';
+    case 'zhengyuan': return gender === 'female' ? '官鬼' : '妻财';
     case 'shiye': return '官鬼';
     case 'jiankang': return '子孙';
     case 'zonghe': return '父母';
@@ -144,7 +144,7 @@ function generateVerdict(hexagram: HexagramData, category: CategoryType, changin
 }
 
 function generatePersonality(dayTiangan: string, hexagram: HexagramData): string[] {
-  const userWuxing = getWuxingFromTiangan(dayTiangan);
+  const userWuxing = tianganToWuxing(dayTiangan);
   const palace = palaces[hexagram.palaceId];
   const palaceWuxing = palace.wuxing;
 
@@ -158,7 +158,7 @@ function generatePersonality(dayTiangan: string, hexagram: HexagramData): string
     }
   }
 
-  return traits.slice(0, 3);
+  return traits;
 }
 
 function generateNarrative(ctx: InterpretationContext): string[] {
@@ -166,8 +166,9 @@ function generateNarrative(ctx: InterpretationContext): string[] {
   const palace = palaces[hexagram.palaceId];
   const najia = calculateNajia(hexagram);
   const liuqin = calculateAllLiuqin(palace.wuxing, najia);
-  const yongshen = determineYongShen(category);
+  const yongshen = determineYongShen(category, ctx.gender);
   const yongshenIndex = liuqin.indexOf(yongshen);
+  const catName = CATEGORY_NAMES[category];
 
   const paragraphs: string[] = [];
 
@@ -178,12 +179,19 @@ function generateNarrative(ctx: InterpretationContext): string[] {
   if (yongshenIndex >= 0) {
     const yn = najia[yongshenIndex];
     const isChanging = changingLines.includes(yongshenIndex);
-    const catName = CATEGORY_NAMES[category];
 
     if (isChanging) {
       paragraphs.push(`你所问的${catName}之事，关键点正处于变动之中。这意味着近期会有明显的转折，需要你保持警觉，把握时机。`);
     } else {
       paragraphs.push(`你所问的${catName}之事，关键因素目前处于稳定状态。不需要过于焦虑，顺其自然反而会有好的结果。`);
+    }
+  } else {
+    // 用神不现，查飞伏
+    const feifu = findFeifu(hexagram, yongshen);
+    if (feifu) {
+      paragraphs.push(`你所问的${catName}之事，关键因素目前隐藏在表面之下（伏于第${feifu.fuYaoIndex + 1}爻）。${feifu.relation}，说明此事需要等待时机，不宜操之过急。`);
+    } else {
+      paragraphs.push(`你所问的${catName}之事，关键因素尚未显现，需要耐心等待时机成熟。`);
     }
   }
 
@@ -202,7 +210,7 @@ function generateAdvice(ctx: InterpretationContext): string[] {
   return advicePool[adviceIndex];
 }
 
-function generateClosing(changingLines: number[], category: CategoryType): string {
+function generateClosing(changingLines: number[], hexagramId: number): string {
   const closings = [
     '卦象所示，命运的线索已经展开。记住，最好的预言是自己创造的未来。',
     '天行健，君子以自强不息。卦象只是参考，真正的力量一直在你手中。',
@@ -210,7 +218,7 @@ function generateClosing(changingLines: number[], category: CategoryType): strin
     '卦象已经为你指明了方向，接下来的路，靠你自己走出来。',
     '一切皆有定数，但定数之中又有变数。你的每一个选择都在改写命运。',
   ];
-  const index = (changingLines.length + category.length) % closings.length;
+  const index = (hexagramId + changingLines.length) % closings.length;
   return closings[index];
 }
 
@@ -223,7 +231,7 @@ export function generateStructuredInterpretation(ctx: InterpretationContext): St
   const personality = generatePersonality(ctx.dayTiangan, ctx.hexagram);
   const narrative = generateNarrative(ctx);
   const advice = generateAdvice(ctx);
-  const closing = generateClosing(ctx.changingLines, ctx.category);
+  const closing = generateClosing(ctx.changingLines, ctx.hexagram.id);
 
   // 保留技术摘要（折叠展示）
   const technicalSummary = generateLegacyInterpretation(ctx);
@@ -276,7 +284,7 @@ function analyzeShiYao(ctx: InterpretationContext): string {
 }
 
 function analyzeYongShen(ctx: InterpretationContext): string {
-  const yongshen = determineYongShen(ctx.category);
+  const yongshen = determineYongShen(ctx.category, ctx.gender);
   const najia = calculateNajia(ctx.hexagram);
   const liuqin = calculateAllLiuqin(palaces[ctx.hexagram.palaceId].wuxing, najia);
   const yongshenIndex = liuqin.indexOf(yongshen);
@@ -294,7 +302,16 @@ function analyzeYongShen(ctx: InterpretationContext): string {
     text += `用神在第${yongshenIndex + 1}爻，纳甲${yn.tiangan}${yn.dizhi}（${yn.wuxing}）。`;
     if (isChanging) text += `用神发动，主所问之事近期会有明显变化。`;
   } else {
-    text += `卦中未见用神，需看飞伏。`;
+    // 用神不现，查飞伏
+    const feifu = findFeifu(ctx.hexagram, yongshen);
+    if (feifu) {
+      text += `卦中未见用神，伏于第${feifu.fuYaoIndex + 1}爻。`;
+      text += `飞神为${feifu.feiLiuqin}（${feifu.feiNajia.tiangan}${feifu.feiNajia.dizhi}），`;
+      text += `伏神为${feifu.fuLiuqin}（${feifu.fuNajia.tiangan}${feifu.fuNajia.dizhi}）。`;
+      text += feifu.relation + '。';
+    } else {
+      text += `卦中未见用神，飞伏亦无。`;
+    }
   }
   return text;
 }
@@ -315,9 +332,60 @@ function analyzeChangingLines(ctx: InterpretationContext): string {
     text += `第${idx + 1}爻（${lq}）：${yaoDesc}\n`;
   }
 
+  // 动爻化进化退分析
+  const dongYaoResults = analyzeDongYao(ctx.hexagram, ctx.bianGua, ctx.changingLines);
+  for (const dy of dongYaoResults) {
+    if (dy.description) {
+      text += `第${dy.yaoIndex + 1}爻${dy.benNajia}→${dy.bianNajia}：${dy.description}\n`;
+    }
+  }
+
   if (ctx.bianGua) {
     text += `\n变卦为${ctx.bianGua.name}，${ctx.bianGua.guaCi}`;
+
+    // 反吟伏吟
+    const fanyin = checkFanyinFuyin(ctx.hexagram, ctx.bianGua);
+    if (fanyin.type) {
+      text += `\n${fanyin.description}`;
+    }
   }
+  return text;
+}
+
+function analyzeKongwang(ctx: InterpretationContext): string {
+  const kongwang = calculateKongwang(ctx.bazi.day.tiangan, ctx.bazi.day.dizhi);
+  const najia = calculateNajia(ctx.hexagram);
+  const palace = palaces[ctx.hexagram.palaceId];
+  const liuqin = calculateAllLiuqin(palace.wuxing, najia);
+
+  let text = `【空亡】\n`;
+  text += `日柱${ctx.bazi.day.tiangan}${ctx.bazi.day.dizhi}，${getKongwangText(kongwang)}。\n`;
+
+  // 检查世爻、用神是否空亡
+  const shiIndex = ctx.hexagram.shiYao - 1;
+  const shiDizhi = najia[shiIndex].dizhi;
+  if (isKongwang(shiDizhi, kongwang)) {
+    text += `世爻（第${ctx.hexagram.shiYao}爻）空亡，主自身无力，所谋难遂。\n`;
+  }
+
+  const yongshen = determineYongShen(ctx.category, ctx.gender);
+  const yongshenIndex = liuqin.indexOf(yongshen);
+  if (yongshenIndex >= 0) {
+    const ysDizhi = najia[yongshenIndex].dizhi;
+    if (isKongwang(ysDizhi, kongwang)) {
+      text += `用神空亡，主所问之事暂时难以落实，需待出空。\n`;
+    }
+  }
+
+  return text;
+}
+
+function analyzeHugua(ctx: InterpretationContext): string {
+  const hugua = calculateHugua(ctx.hexagram);
+  if (!hugua) return '';
+
+  let text = `【互卦】\n`;
+  text += `互卦为${hugua.name}（${hugua.symbol}），${hugua.guaCi}`;
   return text;
 }
 
@@ -347,6 +415,8 @@ export function generateInterpretation(ctx: InterpretationContext): string {
   sections.push(generateGuaOverview(ctx.hexagram));
   sections.push(analyzeShiYao(ctx));
   sections.push(analyzeYongShen(ctx));
+  sections.push(analyzeKongwang(ctx));
+  sections.push(analyzeHugua(ctx));
   if (ctx.changingLines.length > 0) sections.push(analyzeChangingLines(ctx));
   sections.push(generateConclusion(ctx));
   return sections.join('\n\n');

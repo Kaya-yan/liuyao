@@ -55,8 +55,10 @@ function getYearPillar(year: number, month: number, day: number): BaziPillar {
  */
 function getMonthPillar(yearTiangan: string, year: number, month: number, day: number): BaziPillar {
   // 节气近似日期（简化版）
-  // 寅月=1(立春~惊蛰), 卯月=2(惊蛰~清明), ...
-  const jieqiDates = [
+  // 按时间顺序排列，每个节气标志着一个月的开始
+  // 子月是唯一跨年的月份：大雪(12月) → 小寒(1月)
+  const JIEQI = [
+    { month: 1, day: 6 },   // 小寒 → 丑月
     { month: 2, day: 4 },   // 立春 → 寅月
     { month: 3, day: 6 },   // 惊蛰 → 卯月
     { month: 4, day: 5 },   // 清明 → 辰月
@@ -68,27 +70,44 @@ function getMonthPillar(yearTiangan: string, year: number, month: number, day: n
     { month: 10, day: 8 },  // 寒露 → 戌月
     { month: 11, day: 7 },  // 立冬 → 亥月
     { month: 12, day: 7 },  // 大雪 → 子月
-    { month: 1, day: 6 },   // 小寒 → 丑月（次年）
   ];
+  // 丑月=0, 寅月=1, 卯月=2, ..., 亥月=10, 子月=11
+  // 但地支映射需要子月=10, 丑月=11, 寅月=0, ...
+  // 所以 jieqiIndex 到地支的映射是 (jieqiIndex + 11) % 12 ... 不对
+  // 用更直接的方式：根据节气直接确定地支
 
-  // 确定当前在哪个节气之后
-  // 默认子月（12月大雪~1月小寒期间，跨年）
-  let jieqiMonth = 10; // 10=子月
   const currentDate = new Date(year, month - 1, day);
-  for (let i = 0; i < 12; i++) {
-    const j = jieqiDates[i];
-    // 处理跨年：1月的节气（小寒）需与次年比较
-    const jieqiYear = j.month <= 1 ? year + 1 : year;
-    const jDate = new Date(jieqiYear, j.month - 1, j.day);
+  let dizhiMonthIndex: number; // 0=寅, 1=卯, ..., 10=子, 11=丑
 
-    if (currentDate >= jDate) {
-      jieqiMonth = i;
+  if (month === 1 && day < JIEQI[0].day) {
+    // 1月小寒之前：子月（上一年大雪后）
+    dizhiMonthIndex = 10;
+  } else if (month === 12 && day >= JIEQI[11].day) {
+    // 12月大雪之后：子月
+    dizhiMonthIndex = 10;
+  } else {
+    // 从小寒开始，找到当前日期所在的节气区间
+    // 默认：如果在小寒和立春之间，是丑月
+    dizhiMonthIndex = 11; // 丑月（小寒后默认）
+    for (let i = JIEQI.length - 1; i >= 0; i--) {
+      const j = JIEQI[i];
+      const jDate = new Date(year, j.month - 1, j.day);
+      if (currentDate >= jDate) {
+        // i=0(小寒)→丑月(11), i=1(立春)→寅月(0), i=2(惊蛰)→卯月(1), ...
+        dizhiMonthIndex = (i + 11) % 12;
+        break;
+      }
     }
   }
 
-  // 1月小寒(1月6日)之前属于子月（上一年大雪），月干按上一年年干推算
+  // jieqiMonth 用于五虎遁月法的偏移计算
+  // 寅月=0, 卯月=1, ..., 子月=10, 丑月=11
+  const jieqiMonth = dizhiMonthIndex;
+
+  // 子月（大雪~小寒期间）跨年，月干需按上一年年干推算
+  const isZiyue = dizhiMonthIndex === 10;
   let yearTianganForMonth = yearTiangan;
-  if (month === 1 && day < 6) {
+  if (isZiyue) {
     const prevYearTianganIndex = (TIANGAN.indexOf(yearTiangan) - 1 + 10) % 10;
     yearTianganForMonth = TIANGAN[prevYearTianganIndex];
   }

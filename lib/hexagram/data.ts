@@ -102,7 +102,7 @@ function toHexagramData(r: RawHexagram): HexagramData {
     lowerTrigram: r.lower,
     lines: r.lines,
     guaCi: r.guaCi,
-    tuan: r.guaCi,
+    tuan: '', // 彖辞需单独录入，暂留空（不能用卦辞代替）
     xiang: r.xiang,
     yaoCi: r.yaoCi,
     palaceId: r.palaceId,
@@ -123,9 +123,10 @@ export function getAllHexagrams(): HexagramData[] {
   return _hexagrams;
 }
 
-/** 根据ID获取卦象（1-64） */
+/** 根据ID获取卦象（1-64），O(1) 查找 */
 export function getHexagramById(id: number): HexagramData | undefined {
-  return getAllHexagrams().find(h => h.id === id);
+  if (id < 1 || id > 64) return undefined;
+  return getAllHexagrams()[id - 1];
 }
 
 /** 根据名称获取卦象 */
