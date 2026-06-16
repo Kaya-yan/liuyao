@@ -256,39 +256,44 @@ export default function CastPage() {
   }, []);
 
   const finishCasting = (allLines: YaoValue[]) => {
-    const s = storeRef.current;
-    const result = generateHexagram(allLines);
-    const solarTime = calculateTrueSolarTime(
-      s.birthDateTime || new Date(),
-      s.longitude || 120
-    );
-    const bazi = calculateBazi(solarTime);
-    const dayTiangan = getDayTiangan(bazi);
+    try {
+      const s = storeRef.current;
+      const result = generateHexagram(allLines);
+      const solarTime = calculateTrueSolarTime(
+        s.birthDateTime || new Date(),
+        s.longitude || 120
+      );
+      const bazi = calculateBazi(solarTime);
+      const dayTiangan = getDayTiangan(bazi);
 
-    const interpretation = generateInterpretation({
-      hexagram: result.benGua,
-      bianGua: result.bianGua,
-      lines: allLines,
-      changingLines: result.changingLines,
-      category: s.category || 'zonghe',
-      gender: s.gender || 'male',
-      bazi,
-      dayTiangan,
-    });
-
-    s.setResults(result.benGua, result.bianGua, bazi);
-    s.setInterpretation(interpretation);
-    allLines.forEach((v, i) => {
-      s.addLine({
-        value: v,
-        isYang: v === 7 || v === 9,
-        isChanging: v === 6 || v === 9,
-        lineIndex: i,
+      const interpretation = generateInterpretation({
+        hexagram: result.benGua,
+        bianGua: result.bianGua,
+        lines: allLines,
+        changingLines: result.changingLines,
+        category: s.category || 'zonghe',
+        gender: s.gender || 'male',
+        bazi,
+        dayTiangan,
       });
-    });
 
-    setStatus('done');
-    setShowResult(true);
+      s.setResults(result.benGua, result.bianGua, bazi);
+      s.setInterpretation(interpretation);
+      allLines.forEach((v, i) => {
+        s.addLine({
+          value: v,
+          isYang: v === 7 || v === 9,
+          isChanging: v === 6 || v === 9,
+          lineIndex: i,
+        });
+      });
+
+      setShowResult(true);
+    } catch (err) {
+      console.error('起卦失败:', err);
+      // 出错时也显示结果，让用户至少能看到卦象
+      setShowResult(true);
+    }
   };
 
   const renderLine = (value: YaoValue | undefined, index: number, isActive: boolean) => {
@@ -489,64 +494,65 @@ export default function CastPage() {
             </div>
           )}
 
-          {/* 卦成动画 */}
-          {showResult && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0a0a14]/95 animate-fade-in">
-              <div className="text-center">
-                {/* 依次点亮六爻 */}
-                <div className="flex flex-col items-center gap-2 mb-6">
-                  {Array.from({ length: 6 }, (_, i) => {
-                    const reversedIndex = 5 - i;
-                    const v = lines[reversedIndex];
-                    const isYang = v === 7 || v === 9;
-                    const isChanging = v === 6 || v === 9;
-                    return (
-                      <div
-                        key={i}
-                        className="flex items-center gap-2"
-                        style={{
-                          opacity: 0,
-                          animation: `fade-in 0.4s ease-out ${i * 0.15 + 0.3}s forwards`,
-                        }}
-                      >
-                        <span className="text-[10px] text-[#605040] w-6 text-right">{LINE_NAMES[reversedIndex]}</span>
-                        {isYang ? (
-                          <div className={`w-20 h-1 rounded ${isChanging ? 'bg-gold' : 'bg-[#d4a843]'}`} />
-                        ) : (
-                          <div className="flex gap-1.5">
-                            <div className={`w-8 h-1 rounded ${isChanging ? 'bg-gold' : 'bg-[#d4a843]'}`} />
-                            <div className={`w-8 h-1 rounded ${isChanging ? 'bg-gold' : 'bg-[#d4a843]'}`} />
-                          </div>
-                        )}
-                        {isChanging && (
-                          <span className="text-[10px] text-gold">变</span>
-                        )}
+        </div>
+      )}
+
+      {/* 卦成动画 — 在 casting 块外面，status 变化后仍可见 */}
+      {showResult && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0a0a14]/95 animate-fade-in">
+          <div className="text-center">
+            {/* 依次点亮六爻 */}
+            <div className="flex flex-col items-center gap-2 mb-6">
+              {Array.from({ length: 6 }, (_, i) => {
+                const reversedIndex = 5 - i;
+                const v = lines[reversedIndex];
+                const isYang = v === 7 || v === 9;
+                const isChanging = v === 6 || v === 9;
+                return (
+                  <div
+                    key={i}
+                    className="flex items-center gap-2"
+                    style={{
+                      opacity: 0,
+                      animation: `fade-in 0.4s ease-out ${i * 0.15 + 0.3}s forwards`,
+                    }}
+                  >
+                    <span className="text-[10px] text-[#605040] w-6 text-right">{LINE_NAMES[reversedIndex]}</span>
+                    {isYang ? (
+                      <div className={`w-20 h-1 rounded ${isChanging ? 'bg-gold' : 'bg-[#d4a843]'}`} />
+                    ) : (
+                      <div className="flex gap-1.5">
+                        <div className={`w-8 h-1 rounded ${isChanging ? 'bg-gold' : 'bg-[#d4a843]'}`} />
+                        <div className={`w-8 h-1 rounded ${isChanging ? 'bg-gold' : 'bg-[#d4a843]'}`} />
                       </div>
-                    );
-                  })}
-                </div>
-                <div
-                  className="text-4xl font-serif text-gold mb-3 animate-pulse-glow"
-                  style={{ opacity: 0, animation: 'fade-in 0.6s ease-out 1.2s forwards' }}
-                >
-                  卦成
-                </div>
-                <div
-                  className="text-sm text-[#a09880] mb-6"
-                  style={{ opacity: 0, animation: 'fade-in 0.4s ease-out 1.5s forwards' }}
-                >
-                  正在推演纳甲六亲...
-                </div>
-                <button
-                  onClick={() => router.push('/result')}
-                  className="btn-primary px-8 py-3 min-h-[44px]"
-                  style={{ opacity: 0, animation: 'fade-in 0.4s ease-out 2s forwards' }}
-                >
-                  查看结果
-                </button>
-              </div>
+                    )}
+                    {isChanging && (
+                      <span className="text-[10px] text-gold">变</span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-          )}
+            <div
+              className="text-4xl font-serif text-gold mb-3 animate-pulse-glow"
+              style={{ opacity: 0, animation: 'fade-in 0.6s ease-out 1.2s forwards' }}
+            >
+              卦成
+            </div>
+            <div
+              className="text-sm text-[#a09880] mb-6"
+              style={{ opacity: 0, animation: 'fade-in 0.4s ease-out 1.5s forwards' }}
+            >
+              正在推演纳甲六亲...
+            </div>
+            <button
+              onClick={() => router.push('/result')}
+              className="btn-primary px-8 py-3 min-h-[44px]"
+              style={{ opacity: 0, animation: 'fade-in 0.4s ease-out 2s forwards' }}
+            >
+              查看结果
+            </button>
+          </div>
         </div>
       )}
     </div>
