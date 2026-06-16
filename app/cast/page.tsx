@@ -11,6 +11,7 @@ import { calculateTrueSolarTime } from '@/lib/engine/solar-time';
 import { generateHexagram } from '@/lib/engine/hexagram-generator';
 import { generateInterpretation } from '@/lib/engine/interpretation';
 import { hashString } from '@/lib/utils/cn';
+import { playCoinSound, playBellSound, hapticLight } from '@/lib/utils/sound';
 
 type CastStatus = 'selecting' | 'preparing' | 'casting' | 'done';
 
@@ -233,7 +234,12 @@ export default function CastPage() {
       isAnimatingRef.current = false;
       setIsAnimating(false);
 
+      // 播放铜钱音效
+      playCoinSound();
+
       if (linesRef.current.length === 6) {
+        // 卦成，播放铃声
+        playBellSound();
         const finishTimer = setTimeout(() => finishCasting(linesRef.current), 1200);
         pendingTimers.current.push(finishTimer);
       }
@@ -283,8 +289,6 @@ export default function CastPage() {
 
     setStatus('done');
     setShowResult(true);
-    const navTimer = setTimeout(() => router.push('/result'), 2000);
-    pendingTimers.current.push(navTimer);
   };
 
   const renderLine = (value: YaoValue | undefined, index: number, isActive: boolean) => {
@@ -327,7 +331,7 @@ export default function CastPage() {
           <div className="space-y-4">
             <button
               onClick={() => { setMethod('coin'); setStatus('preparing'); }}
-              className="w-full glass-card p-5 flex items-center gap-4 text-left transition-all hover:scale-[1.02] hover:border-gold/40"
+              className="w-full glass-card p-5 flex items-center gap-4 text-left transition-transform hover:scale-[1.02] hover:border-gold/40"
             >
               <span className="text-3xl">🪙</span>
               <div>
@@ -338,7 +342,7 @@ export default function CastPage() {
 
             <button
               onClick={() => { setMethod('taiji'); setStatus('preparing'); }}
-              className="w-full glass-card p-5 flex items-center gap-4 text-left transition-all hover:scale-[1.02] hover:border-gold/40"
+              className="w-full glass-card p-5 flex items-center gap-4 text-left transition-transform hover:scale-[1.02] hover:border-gold/40"
             >
               <span className="text-3xl">☯</span>
               <div>
@@ -354,7 +358,7 @@ export default function CastPage() {
       {status === 'preparing' && (
         <div className="glass-card p-8 w-full max-w-md animate-fade-in text-center">
           <div className="mb-6">
-            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gold/5 flex items-center justify-center animate-pulse-glow">
+            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gold/5 flex items-center justify-center animate-pulse-glow" aria-hidden="true">
               <span className="text-3xl">☯</span>
             </div>
             <h2 className="text-xl font-serif text-gold mb-3">请静心</h2>
@@ -366,7 +370,7 @@ export default function CastPage() {
             </p>
           </div>
           <button
-            onClick={() => setStatus('casting')}
+            onClick={() => { hapticLight(); setStatus('casting'); }}
             className="btn-primary w-full py-3"
           >
             我已准备好了
@@ -377,6 +381,12 @@ export default function CastPage() {
       {/* 起卦中 */}
       {status === 'casting' && (
         <div className="w-full max-w-md animate-fade-in text-center">
+          {/* 用户的问题 */}
+          {store.question && (
+            <div className="glass-card px-4 py-2.5 mb-4 text-sm text-[#c0b090] font-serif">
+              &ldquo;{store.question}&rdquo;
+            </div>
+          )}
           {/* 进度 */}
           <div className="mb-6">
             <div className="text-sm text-[#a09880] mb-2">
@@ -444,13 +454,13 @@ export default function CastPage() {
               )}
 
               <button
-                onClick={handleCoinShake}
+                onClick={() => { hapticLight(); handleCoinShake(); }}
                 disabled={isAnimating}
-                className="btn-primary w-full py-4 text-lg disabled:opacity-50"
+                className="btn-primary w-full py-4 text-lg disabled:opacity-50 min-h-[44px]"
               >
                 {isAnimating ? '摇卦中...' : '摇一摇'}
               </button>
-              <p className="text-xs text-[#605040]">点击按钮或摇动手机</p>
+              <p className="text-xs text-[#605040]">点击按钮，心中默念你的问题</p>
             </div>
           )}
 
@@ -459,18 +469,20 @@ export default function CastPage() {
             <div className="space-y-4">
               <canvas
                 ref={canvasRef}
-                className="mx-auto cursor-grab active:cursor-grabbing touch-none"
+                className="mx-auto cursor-grab active:cursor-grabbing touch-none will-change-transform"
                 onPointerDown={handleTaijiPointerDown}
                 onPointerMove={handleTaijiPointerMove}
                 onPointerUp={handleTaijiPointerUp}
                 onPointerLeave={handleTaijiPointerUp}
+                role="img"
+                aria-label="太极图 - 拖拽旋转以生成卦爻"
               />
               <p className="text-xs text-[#605040]">拖拽旋转太极图，每转120°生成一爻</p>
 
               <button
-                onClick={generateOneLine}
+                onClick={() => { hapticLight(); generateOneLine(); }}
                 disabled={isAnimating}
-                className="btn-ghost w-full py-3 text-sm disabled:opacity-50"
+                className="btn-ghost w-full py-3 text-sm disabled:opacity-50 min-h-[44px]"
               >
                 点击直接生成
               </button>
@@ -520,11 +532,18 @@ export default function CastPage() {
                   卦成
                 </div>
                 <div
-                  className="text-sm text-[#a09880]"
+                  className="text-sm text-[#a09880] mb-6"
                   style={{ opacity: 0, animation: 'fade-in 0.4s ease-out 1.5s forwards' }}
                 >
                   正在推演纳甲六亲...
                 </div>
+                <button
+                  onClick={() => router.push('/result')}
+                  className="btn-primary px-8 py-3 min-h-[44px]"
+                  style={{ opacity: 0, animation: 'fade-in 0.4s ease-out 2s forwards' }}
+                >
+                  查看结果
+                </button>
               </div>
             </div>
           )}

@@ -82,9 +82,13 @@ export function generateHexagram(linesOrEntropy: YaoValue[] | EntropyData): {
     bianGua = findHexagramByLines(bianLines) || null;
   }
 
+  if (!benGua) {
+    throw new Error(`无法找到对应的卦象: [${lines.join(',')}]`);
+  }
+
   return {
     lines,
-    benGua: benGua!,
+    benGua,
     bianGua,
     changingLines,
   };

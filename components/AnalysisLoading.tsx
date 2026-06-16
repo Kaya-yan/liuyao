@@ -61,48 +61,35 @@ export default function AnalysisLoading({ onComplete }: AnalysisLoadingProps) {
         label: '推算四柱八字',
         detail: '根据出生时辰排定年月日时四柱',
         computed: baziStr,
-        duration: 1400,
-      },
-      {
-        icon: '真时',
-        label: '校准真太阳时',
-        detail: '经度修正与均时差计算',
-        computed: store.longitude ? `东经 ${store.longitude.toFixed(1)}°` : undefined,
-        duration: 1000,
+        duration: 700,
       },
       {
         icon: '纳甲',
         label: '排布纳甲',
         detail: '依卦宫分配天干地支',
         computed: najiaStr,
-        duration: 1200,
+        duration: 600,
       },
       {
         icon: '六亲',
         label: '确定六亲',
         detail: '五行生克关系推演',
         computed: liuqinStr || undefined,
-        duration: 1000,
+        duration: 500,
       },
       {
         icon: '六神',
         label: '排布六神',
-        detail: '据日干起青龙朱雀勾陈螣蛇白虎玄武',
+        detail: '据日干起六神',
         computed: liushenStr || undefined,
-        duration: 1000,
-      },
-      {
-        icon: '世应',
-        label: '定位世应',
-        detail: '确定世爻与应爻位置',
-        computed: shiYingStr || undefined,
-        duration: 800,
+        duration: 500,
       },
       {
         icon: '解读',
         label: '综合解读',
         detail: '卦象、动爻、变卦综合分析',
-        duration: 1300,
+        computed: shiYingStr || undefined,
+        duration: 700,
       },
     ];
   }, [store.bazi, store.benGua, store.longitude]);
@@ -162,7 +149,7 @@ export default function AnalysisLoading({ onComplete }: AnalysisLoadingProps) {
       <div className="relative w-full max-w-sm px-6">
         {/* 标题 */}
         <div className="text-center mb-8">
-          <div className="text-3xl mb-3 animate-taiji inline-block">
+          <div className="text-3xl mb-3 motion-safe:animate-taiji inline-block">
             <svg viewBox="0 0 200 200" className="w-12 h-12">
               <path d="M100,2 A98,98 0 0,1 100,198 A49,49 0 0,0 100,100 A49,49 0 0,1 100,2" fill="#f5f0e8" />
               <path d="M100,198 A98,98 0 0,1 100,2 A49,49 0 0,1 100,100 A49,49 0 0,0 100,198" fill="#1a1a2e" />
@@ -178,7 +165,7 @@ export default function AnalysisLoading({ onComplete }: AnalysisLoadingProps) {
         <div className="mb-8">
           <div className="h-1 bg-[#1a1a2e] rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-gold-dark via-gold to-gold-light rounded-full transition-all duration-300 ease-out"
+              className="h-full bg-gradient-to-r from-gold-dark via-gold to-gold-light rounded-full transition-[width] duration-300 ease-out"
               style={{ width: `${progress * 100}%` }}
             />
           </div>
@@ -196,7 +183,7 @@ export default function AnalysisLoading({ onComplete }: AnalysisLoadingProps) {
             return (
               <div
                 key={i}
-                className={`flex items-start gap-3 py-2.5 px-3 rounded-lg transition-all duration-500 ${
+                className={`flex items-start gap-3 py-2.5 px-3 rounded-lg transition-opacity transition-colors duration-500 ${
                   isCurrent
                     ? 'bg-gold/[0.06] border border-gold/10'
                     : isCompleted
@@ -206,7 +193,7 @@ export default function AnalysisLoading({ onComplete }: AnalysisLoadingProps) {
               >
                 {/* 图标 */}
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium shrink-0 transition-all duration-500 ${
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium shrink-0 transition-colors duration-500 ${
                     isCompleted
                       ? 'bg-gold/20 text-gold'
                       : isCurrent

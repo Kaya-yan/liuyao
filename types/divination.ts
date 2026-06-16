@@ -75,6 +75,7 @@ export interface DivinationState {
   birthDateTime: Date | null;
   gender: GenderType | null;
   category: CategoryType | null;
+  question: string | null;
 
   // 位置
   latitude: number | null;
@@ -98,6 +99,7 @@ export interface DivinationState {
   setBirthDateTime: (date: Date) => void;
   setGender: (gender: GenderType) => void;
   setCategory: (category: CategoryType) => void;
+  setQuestion: (question: string) => void;
   setLocation: (lat: number, lng: number) => void;
   setCastingMethod: (method: CastingMethod) => void;
   addLine: (line: YaoLine) => void;
@@ -105,5 +107,6 @@ export interface DivinationState {
   setResults: (benGua: HexagramData, bianGua: HexagramData | null, bazi: Bazi) => void;
   setInterpretation: (text: string) => void;
   setStep: (step: DivinationStep) => void;
+  softReset: () => void;
   reset: () => void;
 }

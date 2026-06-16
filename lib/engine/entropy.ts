@@ -39,15 +39,6 @@ function numberToBytes(n: number): number[] {
   return bytes;
 }
 
-/** 字符串哈希 */
-function hashString(s: string): number {
-  let hash = 0;
-  for (let i = 0; i < s.length; i++) {
-    hash = ((hash << 5) - hash + s.charCodeAt(i)) | 0;
-  }
-  return hash >>> 0;
-}
-
 /** 将熵值数据序列化为字节数组 */
 function serializeEntropy(entropy: EntropyData): number[] {
   const bytes: number[] = [];

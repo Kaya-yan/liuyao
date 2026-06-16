@@ -74,7 +74,7 @@ export default function LocationPage() {
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-gradient-to-b from-[#0a0a14] via-[#0f0f1a] to-[#0a0a14]">
       {/* 步骤指示 */}
       <div className="flex items-center gap-3 mb-10">
-        {['生辰', '性别', '类别', '定位'].map((label, i) => (
+        {['生辰', '类别', '提问', '定位'].map((label, i) => (
           <div key={label} className="flex items-center gap-2">
             <div
               className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
@@ -94,7 +94,7 @@ export default function LocationPage() {
       <div className="glass-card p-8 w-full max-w-md animate-fade-in text-center">
         {/* 定位图标 */}
         <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gold/10 flex items-center justify-center">
-          <svg className="w-10 h-10 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="w-10 h-10 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
@@ -102,16 +102,15 @@ export default function LocationPage() {
 
         <h2 className="text-xl font-serif text-gold mb-3">获取您的位置</h2>
         <p className="text-sm text-[#a09880] mb-6 leading-relaxed">
-          系统将根据您的经度计算<span className="text-gold">真太阳时</span>——即太阳实际经过当地子午线的时间。
-          不同经度与北京时间存在分钟级差异，直接影响八字排盘中时柱的准确性。
+          古人用日晷计时，太阳到头顶才是午时正刻。现代北京时间统一用东经120°，但您出生的地方可能偏东或偏西，导致实际太阳时间差几分钟甚至几十分钟。<span className="text-gold">定位是为了还原您出生那一刻的真实天象。</span>
         </p>
 
         {status === 'idle' && (
           <div className="space-y-3">
-            <button onClick={requestLocation} className="btn-primary w-full py-3">
+            <button onClick={requestLocation} className="btn-primary w-full py-3 min-h-[44px]">
               允许获取位置
             </button>
-            <button onClick={handleSkip} className="btn-ghost w-full py-3 text-sm">
+            <button onClick={handleSkip} className="btn-ghost w-full py-3 text-sm min-h-[44px]">
               使用北京时间（东经120°）
             </button>
           </div>
@@ -143,7 +142,7 @@ export default function LocationPage() {
                     <div className="text-[10px] text-[#605040] mb-1">北京时间</div>
                     <div className="text-foreground font-mono">{solarDiff.beijing}</div>
                   </div>
-                  <svg className="w-5 h-5 text-gold/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                  <svg className="w-5 h-5 text-gold/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                   </svg>
                   <div className="text-center">
@@ -160,7 +159,7 @@ export default function LocationPage() {
               </div>
             )}
 
-            <button onClick={handleNext} className="btn-primary w-full py-3">
+            <button onClick={handleNext} className="btn-primary w-full py-3 min-h-[44px]">
               继续起卦
             </button>
           </div>
@@ -171,7 +170,7 @@ export default function LocationPage() {
             <p className="text-sm text-[#a09880] mb-4">
               将使用北京时间（东经120°）进行计算，对大部分地区影响在数分钟以内。
             </p>
-            <button onClick={handleSkip} className="btn-primary w-full py-3">
+            <button onClick={handleSkip} className="btn-primary w-full py-3 min-h-[44px]">
               继续起卦
             </button>
           </div>

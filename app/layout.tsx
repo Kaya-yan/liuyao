@@ -15,13 +15,23 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" className="h-full antialiased">
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
           href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap"
           rel="stylesheet"
         />
       </head>
       <body className="min-h-full flex flex-col">
-        {children}
+        <a
+          href="#main-content"
+          className="visually-hidden focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-gold focus:text-[#0a0a14] focus:rounded-lg focus:text-sm"
+        >
+          跳到主要内容
+        </a>
+        <main id="main-content" className="flex-1">
+          {children}
+        </main>
       </body>
     </html>
   );

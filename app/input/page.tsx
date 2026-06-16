@@ -4,16 +4,18 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDivinationStore } from '@/stores/divination';
 import { CategoryType, GenderType } from '@/types/divination';
+import DatePicker from '@/components/DatePicker';
 
-const CATEGORIES: { key: CategoryType; icon: string; label: string; desc: string; yongshen: string }[] = [
-  { key: 'caiyun', icon: '💰', label: '财运', desc: '取妻财为用神，分析财爻旺衰与世爻关系', yongshen: '妻财' },
-  { key: 'zhengyuan', icon: '💕', label: '正缘', desc: '男取妻财、女取官鬼为用神，看桃花与合冲', yongshen: '妻财/官鬼' },
-  { key: 'shiye', icon: '🏛', label: '事业', desc: '取官鬼为用神，分析官爻与世爻的生克关系', yongshen: '官鬼' },
-  { key: 'jiankang', icon: '🏥', label: '健康', desc: '取子孙为用神，看卦中忌神与用神的旺衰', yongshen: '子孙' },
-  { key: 'zonghe', icon: '☯', label: '综合', desc: '取父母为用神，综合分析世爻与各爻关系', yongshen: '父母' },
+const CATEGORIES: { key: CategoryType; icon: string; label: string; desc: string; detail: string }[] = [
+  { key: 'caiyun', icon: '💰', label: '财运', desc: '钱的事，赚得到吗、守得住吗', detail: '取妻财为用神' },
+  { key: 'zhengyuan', icon: '💕', label: '正缘', desc: '感情的事，对的人在哪里', detail: '男取妻财、女取官鬼为用神' },
+  { key: 'shiye', icon: '🏛', label: '事业', desc: '工作的事，该不该跳槽、能不能升', detail: '取官鬼为用神' },
+  { key: 'jiankang', icon: '🏥', label: '健康', desc: '身体的事，哪里需要注意', detail: '取子孙为用神' },
+  { key: 'zonghe', icon: '☯', label: '综合', desc: '说不清具体问什么，就是想看看', detail: '取父母为用神' },
 ];
 
 const SHICHEN_OPTIONS = [
+  { value: 'unknown', label: '不确定 / 忘了' },
   { value: '23', label: '子时 (23:00-01:00)' },
   { value: '1', label: '丑时 (01:00-03:00)' },
   { value: '3', label: '寅时 (03:00-05:00)' },
@@ -28,6 +30,14 @@ const SHICHEN_OPTIONS = [
   { value: '21', label: '亥时 (21:00-23:00)' },
 ];
 
+const QUESTION_SUGGESTIONS: Record<CategoryType, string[]> = {
+  caiyun: ['最近适合投资吗？', '今年的财运怎么样？', '这笔钱能赚到吗？'],
+  zhengyuan: ['我的正缘什么时候来？', '我和TA有结果吗？', '最近会遇到对的人吗？'],
+  shiye: ['该不该跳槽？', '今年能升职吗？', '这个项目该不该接？'],
+  jiankang: ['最近身体要注意什么？', '这个病能好吗？', '需要去做个检查吗？'],
+  zonghe: ['最近运势怎么样？', '这件事会顺利吗？', '我该怎么选择？'],
+};
+
 export default function InputPage() {
   const router = useRouter();
   const store = useDivinationStore();
@@ -36,39 +46,50 @@ export default function InputPage() {
   const [shichen, setShichen] = useState('11');
   const [gender, setGender] = useState<GenderType | null>(null);
   const [category, setCategory] = useState<CategoryType | null>(null);
+  const [question, setQuestion] = useState('');
 
   const handleBirthNext = () => {
     if (!birthDate) return;
     const date = new Date(birthDate);
-    date.setHours(parseInt(shichen), 0, 0, 0);
+    if (shichen !== 'unknown') {
+      date.setHours(parseInt(shichen), 0, 0, 0);
+    } else {
+      date.setHours(12, 0, 0, 0);
+    }
     store.setBirthDateTime(date);
     setStep(1);
   };
 
-  const handleGenderNext = () => {
-    if (!gender) return;
+  const handleCategoryGenderNext = () => {
+    if (!gender || !category) return;
     store.setGender(gender);
+    store.setCategory(category);
     setStep(2);
   };
 
-  const handleCategoryNext = () => {
-    if (!category) return;
-    store.setCategory(category);
+  const handleQuestionNext = () => {
+    if (question.trim()) {
+      store.setQuestion(question.trim());
+    }
     router.push('/location');
   };
 
   const formatBirthConfirm = () => {
     if (!birthDate) return '';
     const d = new Date(birthDate);
-    const shichenName = SHICHEN_OPTIONS.find(s => s.value === shichen)?.label.split(' ')[0] || '';
+    const shichenName = shichen === 'unknown'
+      ? '时辰不确定'
+      : (SHICHEN_OPTIONS.find(s => s.value === shichen)?.label.split(' ')[0] || '');
     return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 ${shichenName}`;
   };
+
+  const suggestedQuestions = category ? QUESTION_SUGGESTIONS[category] : [];
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-gradient-to-b from-[#0a0a14] via-[#0f0f1a] to-[#0a0a14]">
       {/* 步骤指示 */}
       <div className="flex items-center gap-3 mb-10">
-        {['生辰', '性别', '类别'].map((label, i) => (
+        {['生辰', '类别', '提问'].map((label, i) => (
           <div key={label} className="flex items-center gap-2">
             <div
               className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all ${
@@ -100,6 +121,12 @@ export default function InputPage() {
               <span className="text-[#a09880]">{gender === 'male' ? '男（阳）' : '女（阴）'}</span>
             </>
           )}
+          {step > 1 && category && (
+            <>
+              <span className="text-[#3a3a4e]">·</span>
+              <span className="text-[#a09880]">{CATEGORIES.find(c => c.key === category)?.label}</span>
+            </>
+          )}
         </div>
       )}
 
@@ -108,24 +135,23 @@ export default function InputPage() {
         <div className="glass-card p-8 w-full max-w-md animate-fade-in">
           <h2 className="text-xl font-serif text-gold mb-2 text-center">请输入您的生辰</h2>
           <p className="text-xs text-[#706850] text-center mb-6 leading-relaxed">
-            出生时辰用于排定四柱八字，是六爻分析中确定用神与六亲关系的基础
+            出生时间用来排八字，不需要精确到分钟，大概时间段就行
           </p>
 
           <div className="space-y-5">
             <div>
-              <label className="block text-sm text-[#a09880] mb-2">出生日期</label>
-              <input
-                type="date"
+              <label className="block text-sm text-[#a09880] mb-3">出生日期</label>
+              <DatePicker
                 value={birthDate}
-                onChange={(e) => setBirthDate(e.target.value)}
+                onChange={setBirthDate}
                 max={new Date().toISOString().split('T')[0]}
-                className="w-full px-4 py-3 bg-[#0a0a14] border border-dark-border rounded-lg text-foreground focus:border-gold focus:outline-none transition-colors"
               />
             </div>
 
             <div>
-              <label className="block text-sm text-[#a09880] mb-2">出生时辰</label>
+              <label htmlFor="birth-shichen" className="block text-sm text-[#a09880] mb-2">出生时辰</label>
               <select
+                id="birth-shichen"
                 value={shichen}
                 onChange={(e) => setShichen(e.target.value)}
                 className="w-full px-4 py-3 bg-[#0a0a14] border border-dark-border rounded-lg text-foreground focus:border-gold focus:outline-none transition-colors"
@@ -136,9 +162,15 @@ export default function InputPage() {
                   </option>
                 ))}
               </select>
-              <p className="text-[10px] text-[#504838] mt-1.5">
-                时辰对应日柱天干，决定日元五行属性
-              </p>
+              {shichen === 'unknown' ? (
+                <p className="text-[10px] text-gold/60 mt-1.5">
+                  没关系，系统会按午时估算，对整体结果影响不大
+                </p>
+              ) : (
+                <p className="text-[10px] text-[#504838] mt-1.5">
+                  记不清的话选"不确定"也可以
+                </p>
+              )}
             </div>
           </div>
 
@@ -152,40 +184,60 @@ export default function InputPage() {
         </div>
       )}
 
-      {/* Step 1: 性别选择 */}
+      {/* Step 1: 性别 + 类别 */}
       {step === 1 && (
         <div className="glass-card p-8 w-full max-w-md animate-fade-in">
-          <h2 className="text-xl font-serif text-gold mb-2 text-center">请选择性别</h2>
+          <h2 className="text-xl font-serif text-gold mb-2 text-center">你是？想问什么？</h2>
           <p className="text-xs text-[#706850] text-center mb-6 leading-relaxed">
-            性别影响用神取法——男以妻财为用神看感情，女以官鬼为用神看感情
+            选好性别和方向，系统会针对性地分析
           </p>
 
-          <div className="grid grid-cols-2 gap-4">
+          {/* 性别 */}
+          <div className="grid grid-cols-2 gap-3 mb-5">
             {[
-              { key: 'male' as GenderType, label: '男', symbol: '⚊', desc: '阳 · 妻财为用' },
-              { key: 'female' as GenderType, label: '女', symbol: '⚋', desc: '阴 · 官鬼为用' },
+              { key: 'male' as GenderType, label: '男', symbol: '⚊', desc: '阳刚之气' },
+              { key: 'female' as GenderType, label: '女', symbol: '⚋', desc: '阴柔之美' },
             ].map((opt) => (
               <button
                 key={opt.key}
                 onClick={() => setGender(opt.key)}
-                className={`glass-card p-6 text-center transition-all hover:scale-105 ${
+                className={`glass-card py-3 px-4 text-center transition-transform hover:scale-105 ${
                   gender === opt.key ? 'selected-ring' : 'hover:border-gold/40'
                 }`}
               >
-                <div className="text-3xl mb-2">{opt.symbol}</div>
-                <div className="text-lg font-serif text-foreground">{opt.label}</div>
-                <div className="text-xs text-[#706850]">{opt.desc}</div>
+                <div className="text-2xl mb-1">{opt.symbol}</div>
+                <div className="text-base font-serif text-foreground">{opt.label}</div>
+                <div className="text-[10px] text-[#706850]">{opt.desc}</div>
               </button>
             ))}
           </div>
 
-          <div className="flex gap-3 mt-8">
+          {/* 类别 */}
+          <div className="space-y-2.5">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat.key}
+                onClick={() => setCategory(cat.key)}
+                className={`w-full glass-card p-3.5 flex items-center gap-3 text-left transition-transform hover:scale-[1.02] ${
+                  category === cat.key ? 'selected-ring' : 'hover:border-gold/40'
+                }`}
+              >
+                <span className="text-xl">{cat.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-foreground">{cat.label}</div>
+                  <div className="text-xs text-[#706850]">{cat.desc}</div>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          <div className="flex gap-3 mt-6">
             <button onClick={() => setStep(0)} className="btn-ghost flex-1 py-3">
               返回
             </button>
             <button
-              onClick={handleGenderNext}
-              disabled={!gender}
+              onClick={handleCategoryGenderNext}
+              disabled={!gender || !category}
               className="btn-primary flex-1 py-3 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               下一步
@@ -194,33 +246,51 @@ export default function InputPage() {
         </div>
       )}
 
-      {/* Step 2: 问题类别 */}
+      {/* Step 2: 具体问题 */}
       {step === 2 && (
         <div className="glass-card p-8 w-full max-w-md animate-fade-in">
-          <h2 className="text-xl font-serif text-gold mb-2 text-center">想问什么？</h2>
+          <h2 className="text-xl font-serif text-gold mb-2 text-center">你想问什么？</h2>
           <p className="text-xs text-[#706850] text-center mb-6 leading-relaxed">
-            不同问题对应不同的用神，用神是卦象分析的核心切入点
+            把你心里的困惑说出来，卦象会更有针对性。不写也行，直接跳过。
           </p>
 
-          <div className="space-y-3">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat.key}
-                onClick={() => setCategory(cat.key)}
-                className={`w-full glass-card p-4 flex items-center gap-4 text-left transition-all hover:scale-[1.02] ${
-                  category === cat.key ? 'selected-ring' : 'hover:border-gold/40'
-                }`}
-              >
-                <span className="text-2xl">{cat.icon}</span>
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium text-foreground">{cat.label}</div>
-                  <div className="text-xs text-[#706850] leading-relaxed">{cat.desc}</div>
+          <div className="space-y-4">
+            <label htmlFor="question-input" className="visually-hidden">你想问的问题</label>
+            <textarea
+              id="question-input"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              placeholder={suggestedQuestions[0] || '比如：这件事会顺利吗？'}
+              maxLength={200}
+              rows={3}
+              aria-describedby="question-hint"
+              className="w-full px-4 py-3 bg-[#0a0a14] border border-dark-border rounded-lg text-foreground focus:border-gold focus:outline-none transition-colors resize-none text-sm leading-relaxed"
+            />
+            <div id="question-hint" className="text-right text-[10px] text-[#504838]">
+              {question.length}/200
+            </div>
+
+            {/* 快捷问题 */}
+            {suggestedQuestions.length > 0 && (
+              <div>
+                <div className="text-xs text-[#605040] mb-2">或者试试这些问题：</div>
+                <div className="flex flex-wrap gap-2">
+                  {suggestedQuestions.map((q) => (
+                    <button
+                      key={q}
+                      onClick={() => setQuestion(q)}
+                      className={`text-xs px-3 py-1.5 rounded-full border transition-all ${
+                        question === q
+                          ? 'border-gold/40 bg-gold/10 text-gold'
+                          : 'border-dark-border text-[#706850] hover:border-gold/20 hover:text-[#a09880]'
+                      }`}
+                    >
+                      {q}
+                    </button>
+                  ))}
                 </div>
-                <div className="text-[10px] text-gold/40 shrink-0">
-                  用神：{cat.yongshen}
-                </div>
-              </button>
-            ))}
+              </div>
+            )}
           </div>
 
           <div className="flex gap-3 mt-8">
@@ -228,11 +298,10 @@ export default function InputPage() {
               返回
             </button>
             <button
-              onClick={handleCategoryNext}
-              disabled={!category}
-              className="btn-primary flex-1 py-3 disabled:opacity-40 disabled:cursor-not-allowed"
+              onClick={handleQuestionNext}
+              className="btn-primary flex-1 py-3"
             >
-              下一步
+              {question.trim() ? '下一步' : '跳过，直接起卦'}
             </button>
           </div>
         </div>

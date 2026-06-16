@@ -11,10 +11,10 @@ import { getDayTiangan } from '@/lib/engine/bazi';
 import { generateStructuredInterpretation, StructuredInterpretation } from '@/lib/engine/interpretation';
 import { LiuShenType } from '@/types/hexagram';
 import AnalysisLoading from '@/components/AnalysisLoading';
-
-const CATEGORY_LABELS: Record<string, string> = {
-  'caiyun': '财运', 'zhengyuan': '正缘', 'shiye': '事业', 'jiankang': '健康', 'zonghe': '综合',
-};
+import { saveHistory, generateHistoryId, HistoryRecord } from '@/lib/utils/history';
+import { shareImage } from '@/lib/utils/share-image';
+import { CATEGORY_LABELS } from '@/lib/constants';
+import QRCode from '@/components/QRCode';
 
 // ===== 术语解释 =====
 const TERM_EXPLANATIONS: Record<string, string> = {
@@ -52,15 +52,25 @@ function TermTip({ term }: { term: string }) {
 // ===== 可折叠区块 =====
 function Collapse({ title, children, defaultOpen = false }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
   const [open, setOpen] = useState(defaultOpen);
+  const contentId = `collapse-${title.replace(/\s/g, '-')}`;
   return (
     <div className="mb-3">
-      <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between py-2 px-1 text-left group">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between py-2 px-1 text-left group min-h-[32px]"
+        aria-expanded={open}
+        aria-controls={contentId}
+      >
         <span className="text-xs text-[#605040] group-hover:text-[#807060] transition-colors">{title}</span>
-        <svg className={`w-3.5 h-3.5 text-[#403828] transition-transform duration-300 ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+        <svg className={`w-3.5 h-3.5 text-[#403828] transition-transform duration-300 ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
         </svg>
       </button>
-      <div className={`transition-all duration-500 ease-in-out overflow-hidden ${open ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}`}>
+      <div
+        id={contentId}
+        role="region"
+        className={`transition-all duration-500 ease-in-out overflow-hidden ${open ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}`}
+      >
         {children}
       </div>
     </div>
@@ -110,8 +120,38 @@ export default function ResultPage() {
       gender: store.gender || 'male',
       bazi: store.bazi,
       dayTiangan: calcData.dayTiangan,
+      question: store.question || undefined,
     });
-  }, [calcData, store.bianGua, store.lines, store.category, store.gender, store.bazi]);
+  }, [calcData, store.bianGua, store.lines, store.category, store.gender, store.bazi, store.question]);
+
+  // 保存历史记录
+  useEffect(() => {
+    if (!interp || !store.benGua || !store.bazi) return;
+    // 只在首次加载时保存，避免重复
+    const hasSaved = sessionStorage.getItem('liuyao_saved');
+    if (hasSaved) return;
+
+    const record: HistoryRecord = {
+      id: generateHistoryId(),
+      timestamp: Date.now(),
+      category: store.category || 'zonghe',
+      gender: store.gender || 'male',
+      question: store.question,
+      hexagramName: store.benGua.name,
+      hexagramSymbol: store.benGua.symbol,
+      palaceName: palaces[store.benGua.palaceId].name,
+      archetype: interp.archetype,
+      verdict: interp.verdict,
+      bazi: {
+        year: `${store.bazi.year.tiangan}${store.bazi.year.dizhi}`,
+        month: `${store.bazi.month.tiangan}${store.bazi.month.dizhi}`,
+        day: `${store.bazi.day.tiangan}${store.bazi.day.dizhi}`,
+        hour: `${store.bazi.hour.tiangan}${store.bazi.hour.dizhi}`,
+      },
+    };
+    saveHistory(record);
+    sessionStorage.setItem('liuyao_saved', '1');
+  }, [interp, store.benGua, store.bazi, store.category, store.gender, store.question]);
 
   if (!store.benGua || !calcData) return null;
   if (loading) return <AnalysisLoading onComplete={handleAnalysisComplete} />;
@@ -126,7 +166,7 @@ export default function ResultPage() {
       <div className="max-w-lg mx-auto">
 
         {/* ===== 卦象揭幕 ===== */}
-        <div className={`text-center mb-8 transition-all duration-1000 ${showContent ? 'opacity-100 scale-100' : 'opacity-0 scale-90'}`}>
+        <div className={`text-center mb-8 transition-opacity transition-transform duration-1000 ${showContent ? 'opacity-100 scale-100' : 'opacity-0 scale-90'}`}>
           <div className="text-6xl mb-4" style={{ filter: revealed ? 'none' : 'blur(4px)', transition: 'filter 1s ease-out' }}>
             {hexagram.symbol}
           </div>
@@ -141,17 +181,17 @@ export default function ResultPage() {
         </div>
 
         {/* ===== 一句话判词 ===== */}
-        <div className={`glass-card p-5 mb-6 border-l-2 border-gold/40 transition-all duration-700 delay-200 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+        <div className={`glass-card p-5 mb-6 border-l-2 border-gold/40 transition-opacity transition-transform duration-700 delay-200 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
           <p className="text-base text-foreground font-serif leading-relaxed text-center">
             {interp.verdict}
           </p>
         </div>
 
-        {/* ===== 你是谁（人格洞察） ===== */}
-        <div className={`mb-6 transition-all duration-700 delay-300 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+        {/* ===== 此卦暗示（人格洞察） ===== */}
+        <div className={`mb-6 transition-opacity transition-transform duration-700 delay-300 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
           <div className="flex items-center gap-2 mb-3">
             <div className="w-1 h-4 bg-gold/40 rounded-full" />
-            <span className="text-xs text-gold tracking-widest">你是谁</span>
+            <span className="text-xs text-gold tracking-widest">此卦暗示</span>
           </div>
           <div className="space-y-2">
             {interp.personality.map((trait, i) => (
@@ -163,22 +203,20 @@ export default function ResultPage() {
         </div>
 
         {/* ===== 卦象解读（叙事体） ===== */}
-        <div className={`mb-6 transition-all duration-700 delay-500 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-1 h-4 bg-gold/40 rounded-full" />
-            <span className="text-xs text-gold tracking-widest">卦象启示</span>
-          </div>
-          <div className="glass-card p-5 space-y-4">
-            {interp.narrative.map((para, i) => (
-              <p key={i} className="text-sm text-[#c0b8a0] leading-relaxed font-serif">
-                {para}
-              </p>
-            ))}
-          </div>
+        <div className={`mb-6 transition-opacity transition-transform duration-700 delay-500 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+          <Collapse title="卦象启示（详细解读）">
+            <div className="glass-card p-5 space-y-4 mb-3">
+              {interp.narrative.map((para, i) => (
+                <p key={i} className="text-sm text-[#c0b8a0] leading-relaxed font-serif">
+                  {para}
+                </p>
+              ))}
+            </div>
+          </Collapse>
         </div>
 
         {/* ===== 行动指南 ===== */}
-        <div className={`mb-6 transition-all duration-700 delay-700 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+        <div className={`mb-6 transition-opacity transition-transform duration-700 delay-700 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
           <div className="flex items-center gap-2 mb-3">
             <div className="w-1 h-4 bg-gold/40 rounded-full" />
             <span className="text-xs text-gold tracking-widest">行动指南</span>
@@ -194,9 +232,9 @@ export default function ResultPage() {
         </div>
 
         {/* ===== 结语（Peak-End Rule：最强的一句话放在最后） ===== */}
-        <div className={`mb-8 transition-all duration-700 delay-900 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+        <div className={`mb-8 transition-opacity transition-transform duration-700 delay-900 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
           <div className="glass-card p-6 text-center border border-gold/10 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-gold/[0.03] to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-br from-gold/[0.03] to-transparent" aria-hidden="true" />
             <p className="relative text-base text-gold font-serif leading-relaxed">
               {interp.closing}
             </p>
@@ -204,10 +242,10 @@ export default function ResultPage() {
         </div>
 
         {/* ===== 分享卡片区域 ===== */}
-        <div className={`mb-8 transition-all duration-700 delay-1000 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+        <div className={`mb-8 transition-opacity transition-transform duration-700 delay-1000 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
           <div className="glass-card p-6 border border-gold/15 relative overflow-hidden" id="share-card">
             {/* 装饰 */}
-            <div className="absolute top-3 right-3 text-gold/10 text-6xl font-serif leading-none pointer-events-none select-none">
+            <div className="absolute top-3 right-3 text-gold/10 text-6xl font-serif leading-none pointer-events-none select-none" aria-hidden="true">
               {hexagram.symbol}
             </div>
             <div className="relative">
@@ -232,31 +270,58 @@ export default function ResultPage() {
                   变爻：{changingLines.map(l => ['初', '二', '三', '四', '五', '上'][l.lineIndex]).join('、')}爻
                 </div>
               )}
-              <div className="text-[10px] text-[#3a3a3a] mt-3 pt-2 border-t border-dark-border">
-                扫码体验 · 天机六爻
+              <div className="flex items-center justify-between mt-3 pt-2 border-t border-dark-border">
+                <span className="text-[10px] text-[#3a3a3a]">扫码体验 · 天机六爻</span>
+                <QRCode size={60} />
               </div>
             </div>
           </div>
         </div>
 
         {/* ===== 操作按钮 ===== */}
-        <div className={`flex gap-3 mb-6 transition-all duration-700 delay-1100 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-          <button onClick={() => { store.reset(); router.push('/'); }} className="btn-ghost flex-1 py-3">
+        <div className={`flex gap-3 mb-6 transition-opacity transition-transform duration-700 delay-1100 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+          <button onClick={() => { sessionStorage.removeItem('liuyao_saved'); store.softReset(); router.push('/input'); }} className="btn-ghost flex-1 py-3 min-h-[44px]">
             再算一卦
           </button>
           <button
-            onClick={() => {
+            onClick={async () => {
               const text = `【天机六爻】${hexagram.name} · ${interp.archetype}\n${interp.verdict}\n\n${interp.personality.join('\n')}\n\n${interp.advice.join('\n')}\n\n${interp.closing}`;
-              navigator.clipboard.writeText(text).catch(() => {});
+              if (typeof navigator !== 'undefined' && navigator.share) {
+                try {
+                  await navigator.share({ title: `天机六爻 · ${hexagram.name}`, text });
+                } catch {}
+              } else {
+                navigator.clipboard.writeText(text).catch(() => {});
+              }
             }}
-            className="btn-primary flex-1 py-3"
+            className="btn-primary flex-1 py-3 min-h-[44px]"
           >
             复制结果
           </button>
         </div>
+        <div className={`flex gap-3 mb-8 transition-opacity transition-transform duration-700 delay-1150 ${showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+          <button
+            onClick={async () => {
+              try {
+                await shareImage({
+                  hexagramName: hexagram.name,
+                  hexagramSymbol: hexagram.symbol,
+                  palaceName: palace.name,
+                  archetype: interp.archetype,
+                  verdict: interp.verdict,
+                  category: CATEGORY_LABELS[store.category || 'zonghe'],
+                  question: store.question || undefined,
+                });
+              } catch {}
+            }}
+            className="btn-ghost w-full py-2.5 text-sm min-h-[44px]"
+          >
+            保存图片
+          </button>
+        </div>
 
         {/* ===== 详细技术数据（折叠） ===== */}
-        <div className={`transition-all duration-700 delay-1200 ${showContent ? 'opacity-100' : 'opacity-0'}`}>
+        <div className={`transition-opacity duration-700 delay-1200 ${showContent ? 'opacity-100' : 'opacity-0'}`}>
           <Collapse title="八字信息">
             <div className="glass-card p-4 mb-3">
               <div className="grid grid-cols-4 gap-2 text-center">
@@ -320,10 +385,22 @@ export default function ResultPage() {
             </div>
           </Collapse>
 
-          <Collapse title="卦辞 · 象辞">
-            <div className="glass-card p-4 mb-3">
-              <p className="text-sm text-foreground leading-relaxed font-serif">{hexagram.guaCi}</p>
-              <p className="text-xs text-[#807060] mt-2 italic">{hexagram.xiang}</p>
+          <Collapse title="卦辞 · 彖辞 · 象辞">
+            <div className="glass-card p-4 mb-3 space-y-3">
+              <div>
+                <div className="text-[10px] text-gold/40 mb-1">卦辞</div>
+                <p className="text-sm text-foreground leading-relaxed font-serif">{hexagram.guaCi}</p>
+              </div>
+              {hexagram.tuan && (
+                <div>
+                  <div className="text-[10px] text-gold/40 mb-1">彖辞</div>
+                  <p className="text-xs text-[#a09880] leading-relaxed font-serif">{hexagram.tuan}</p>
+                </div>
+              )}
+              <div>
+                <div className="text-[10px] text-gold/40 mb-1">象辞</div>
+                <p className="text-xs text-[#807060] italic">{hexagram.xiang}</p>
+              </div>
             </div>
           </Collapse>
 
@@ -334,7 +411,7 @@ export default function ResultPage() {
                 <div className="flex flex-col items-center gap-1.5">
                   {Array.from({ length: 6 }, (_, i) => {
                     const ri = 5 - i;
-                    const isYang = store.bianGua!.lines[ri] === 1;
+                    const isYang = store.bianGua?.lines[ri] === 1;
                     return (
                       <div key={i} className="flex items-center justify-center">
                         {isYang ? (
@@ -361,8 +438,8 @@ export default function ResultPage() {
         </div>
 
         {/* 底部 */}
-        <p className={`text-center text-[10px] text-[#2a2a2a] mt-8 transition-all duration-700 delay-1300 ${showContent ? 'opacity-100' : 'opacity-0'}`}>
-          卦象所示，仅供参考 · 命由己造，福自我求
+        <p className={`text-center text-[10px] text-[#4a4a4a] mt-8 transition-opacity duration-700 delay-1300 ${showContent ? 'opacity-100' : 'opacity-0'}`}>
+          卦象所示，仅供参考 · 命由己造，福自我求 · 本工具不构成任何决策建议
         </p>
       </div>
     </div>

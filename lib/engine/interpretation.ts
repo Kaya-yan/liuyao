@@ -2,9 +2,8 @@ import { HexagramData, YaoValue, LiuQinType, LiuShenType } from '@/types/hexagra
 import { CategoryType, Bazi } from '@/types/divination';
 import { calculateNajia } from '@/lib/hexagram/najia';
 import { calculateAllLiuqin } from '@/lib/hexagram/liuqin';
-import { calculateLiushen } from '@/lib/hexagram/liushen';
+import { calculateLiushen, LIUSHEN_MEANINGS } from '@/lib/hexagram/liushen';
 import { palaces } from '@/lib/hexagram/palaces';
-import { LIUSHEN_MEANINGS } from '@/lib/hexagram/liushen';
 import { findFeifu } from '@/lib/hexagram/feifu';
 import { calculateKongwang, isKongwang, getKongwangText } from '@/lib/hexagram/kongwang';
 import { calculateHugua } from '@/lib/hexagram/huyao';
@@ -25,6 +24,7 @@ interface InterpretationContext {
   gender: 'male' | 'female';
   bazi: Bazi;
   dayTiangan: string;
+  question?: string;
 }
 
 export interface StructuredInterpretation {
@@ -162,7 +162,7 @@ function generatePersonality(dayTiangan: string, hexagram: HexagramData): string
 }
 
 function generateNarrative(ctx: InterpretationContext): string[] {
-  const { hexagram, bianGua, changingLines, category } = ctx;
+  const { hexagram, bianGua, changingLines, category, question } = ctx;
   const palace = palaces[hexagram.palaceId];
   const najia = calculateNajia(hexagram);
   const liuqin = calculateAllLiuqin(palace.wuxing, najia);
@@ -172,8 +172,12 @@ function generateNarrative(ctx: InterpretationContext): string[] {
 
   const paragraphs: string[] = [];
 
-  // 第一段：卦象意象
-  paragraphs.push(`此卦为${hexagram.name}，${hexagram.xiang}`);
+  // 第一段：卦象意象（如果有具体问题，先呼应一下）
+  if (question) {
+    paragraphs.push(`你问的是"${question}"。此卦为${hexagram.name}，${hexagram.xiang}`);
+  } else {
+    paragraphs.push(`此卦为${hexagram.name}，${hexagram.xiang}`);
+  }
 
   // 第二段：用神分析（用通俗语言）
   if (yongshenIndex >= 0) {
