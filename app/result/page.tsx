@@ -57,11 +57,11 @@ function Collapse({ title, children, defaultOpen = false }: { title: string; chi
     <div className="mb-3">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between py-2 px-1 text-left group min-h-[32px]"
+        className="w-full flex items-center justify-between py-2 px-1 text-left group min-h-[44px]"
         aria-expanded={open}
         aria-controls={contentId}
       >
-        <span className="text-xs text-[#605040] group-hover:text-[#807060] transition-colors">{title}</span>
+        <span className="text-xs text-[#807060] group-hover:text-[#a09880] transition-colors">{title}</span>
         <svg className={`w-3.5 h-3.5 text-[#403828] transition-transform duration-300 ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
         </svg>
@@ -266,12 +266,12 @@ export default function ResultPage() {
                 </span>
               </div>
               {changingLines.length > 0 && (
-                <div className="text-xs text-[#605040] mb-2">
+                <div className="text-xs text-[#807060] mb-2">
                   变爻：{changingLines.map(l => ['初', '二', '三', '四', '五', '上'][l.lineIndex]).join('、')}爻
                 </div>
               )}
               <div className="flex items-center justify-between mt-3 pt-2 border-t border-dark-border">
-                <span className="text-[10px] text-[#3a3a3a]">扫码体验 · 天机六爻</span>
+                <span className="text-xs text-[#706850]">扫码体验 · 天机六爻</span>
                 <QRCode size={60} />
               </div>
             </div>
@@ -332,7 +332,7 @@ export default function ResultPage() {
                   { label: '时柱', value: store.bazi.hour },
                 ].map((p) => (
                   <div key={p.label}>
-                    <div className="text-[10px] text-[#504838]">{p.label}</div>
+                    <div className="text-xs text-[#807060]">{p.label}</div>
                     <div className="text-sm text-foreground font-serif">{p.value.tiangan}{p.value.dizhi}</div>
                   </div>
                 ))}
@@ -343,11 +343,11 @@ export default function ResultPage() {
           <Collapse title="纳甲 · 六亲 · 六神">
             <div className="glass-card p-4 mb-3">
               <div className="flex items-center gap-2 w-full mb-2 px-1">
-                <div className="w-10 text-right text-[10px] text-[#504838]"><TermTip term="六神" /></div>
-                <div className="flex-1 text-center text-[10px] text-[#504838]">爻象</div>
-                <div className="w-10 text-[10px] text-[#504838]"><TermTip term="六亲" /></div>
-                <div className="w-14 text-[10px] text-[#504838]"><TermTip term="纳甲" /></div>
-                <div className="w-6 text-center text-[10px] text-[#504838]">世应</div>
+                <div className="w-10 text-right text-xs text-[#807060]"><TermTip term="六神" /></div>
+                <div className="flex-1 text-center text-xs text-[#807060]">爻象</div>
+                <div className="w-10 text-xs text-[#807060]"><TermTip term="六亲" /></div>
+                <div className="w-14 text-xs text-[#807060]"><TermTip term="纳甲" /></div>
+                <div className="w-6 text-center text-xs text-[#807060]">世应</div>
               </div>
               {Array.from({ length: 6 }, (_, i) => {
                 const ri = 5 - i;
@@ -376,8 +376,8 @@ export default function ResultPage() {
                     <div className="w-10 text-xs text-[#a09880]">{lq || ''}</div>
                     <div className="w-14 text-xs text-[#807060]">{na ? `${na.tiangan}${na.dizhi}` : ''}</div>
                     <div className="w-6 text-center">
-                      {isShi && <span className="text-[10px] text-gold font-bold">世</span>}
-                      {isYing && <span className="text-[10px] text-crimson-light font-bold">应</span>}
+                      {isShi && <span className="text-xs text-gold font-bold">世</span>}
+                      {isYing && <span className="text-xs text-crimson-light font-bold">应</span>}
                     </div>
                   </div>
                 );
@@ -388,17 +388,17 @@ export default function ResultPage() {
           <Collapse title="卦辞 · 彖辞 · 象辞">
             <div className="glass-card p-4 mb-3 space-y-3">
               <div>
-                <div className="text-[10px] text-gold/40 mb-1">卦辞</div>
+                <div className="text-xs text-gold/40 mb-1">卦辞</div>
                 <p className="text-sm text-foreground leading-relaxed font-serif">{hexagram.guaCi}</p>
               </div>
               {hexagram.tuan && (
                 <div>
-                  <div className="text-[10px] text-gold/40 mb-1">彖辞</div>
+                  <div className="text-xs text-gold/40 mb-1">彖辞</div>
                   <p className="text-xs text-[#a09880] leading-relaxed font-serif">{hexagram.tuan}</p>
                 </div>
               )}
               <div>
-                <div className="text-[10px] text-gold/40 mb-1">象辞</div>
+                <div className="text-xs text-gold/40 mb-1">象辞</div>
                 <p className="text-xs text-[#807060] italic">{hexagram.xiang}</p>
               </div>
             </div>
@@ -438,7 +438,7 @@ export default function ResultPage() {
         </div>
 
         {/* 底部 */}
-        <p className={`text-center text-[10px] text-[#4a4a4a] mt-8 transition-opacity duration-700 delay-1300 ${showContent ? 'opacity-100' : 'opacity-0'}`}>
+        <p className={`text-center text-xs text-[#706850] mt-8 transition-opacity duration-700 delay-1300 ${showContent ? 'opacity-100' : 'opacity-0'}`}>
           卦象所示，仅供参考 · 命由己造，福自我求 · 本工具不构成任何决策建议
         </p>
       </div>

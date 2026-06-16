@@ -1,17 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getHistory, deleteHistory, clearHistory, formatHistoryTime, getCategoryLabel, HistoryRecord } from '@/lib/utils/history';
 
 export default function HistoryPage() {
   const router = useRouter();
-  const [records, setRecords] = useState<HistoryRecord[]>([]);
+  const [records, setRecords] = useState<HistoryRecord[]>(() => getHistory());
   const [showConfirm, setShowConfirm] = useState(false);
-
-  useEffect(() => {
-    setRecords(getHistory());
-  }, []);
 
   const handleDelete = (id: string) => {
     deleteHistory(id);

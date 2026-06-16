@@ -67,8 +67,9 @@ export default function CastPage() {
 
   // Clean up pending timers on unmount
   useEffect(() => {
+    const timers = pendingTimers.current;
     return () => {
-      pendingTimers.current.forEach(clearTimeout);
+      timers.forEach(clearTimeout);
     };
   }, []);
 
@@ -81,7 +82,7 @@ export default function CastPage() {
     if (!ctx) return;
 
     const resize = () => {
-      const size = Math.min(window.innerWidth - 32, 400);
+      const size = Math.max(200, Math.min(window.innerWidth - 32, 400));
       canvas.width = size;
       canvas.height = size;
     };
@@ -161,101 +162,14 @@ export default function CastPage() {
     return () => cancelAnimationFrame(animId);
   }, [method, status]);
 
-  const handleTaijiPointerDown = useCallback((e: React.PointerEvent) => {
-    isDraggingRef.current = true;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    lastAngleRef.current = Math.atan2(e.clientY - (rect.top + rect.height / 2), e.clientX - (rect.left + rect.width / 2));
-    lastTimeRef.current = Date.now();
-    velocityRef.current = 0;
-  }, []);
-
-  const handleTaijiPointerMove = useCallback((e: React.PointerEvent) => {
-    if (!isDraggingRef.current) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const angle = Math.atan2(e.clientY - (rect.top + rect.height / 2), e.clientX - (rect.left + rect.width / 2));
-    let delta = angle - lastAngleRef.current;
-    if (delta > Math.PI) delta -= 2 * Math.PI;
-    if (delta < -Math.PI) delta += 2 * Math.PI;
-
-    rotationRef.current += delta;
-    accumulatedRotationRef.current += Math.abs(delta);
-    lastAngleRef.current = angle;
-
-    const now = Date.now();
-    const dt = now - lastTimeRef.current;
-    if (dt > 0) velocityRef.current = delta / dt * 16;
-    lastTimeRef.current = now;
-
-    if (accumulatedRotationRef.current >= 2.09 && linesRef.current.length < 6 && !isAnimatingRef.current) {
-      accumulatedRotationRef.current = 0;
-      generateOneLineRef.current();
-    }
-  }, []);
-
-  const handleTaijiPointerUp = useCallback(() => { isDraggingRef.current = false; }, []);
-
   // Use refs for store values to avoid stale closures
   const storeRef = useRef(store);
-  storeRef.current = store;
 
-  const generateOneLine = useCallback(() => {
-    const lineIndex = linesRef.current.length;
-    if (lineIndex >= 6 || isAnimatingRef.current) return;
+  useEffect(() => {
+    storeRef.current = store;
+  }, [store]);
 
-    isAnimatingRef.current = true;
-    setIsAnimating(true);
-    const s = storeRef.current;
-    const entropy = createEntropyData(
-      hashString(s.birthDateTime?.toISOString() || ''),
-      s.latitude,
-      s.longitude
-    );
-    entropy.timestampMs = Date.now() + lineIndex;
-    entropy.touchAngle = rotationRef.current;
-    entropy.touchDuration = accumulatedRotationRef.current;
-
-    const seed = generateSeed(entropy);
-    const lineValue = castCoins(seed, lineIndex);
-
-    const timer = setTimeout(() => {
-      linesRef.current = [...linesRef.current, lineValue.value];
-      setLines([...linesRef.current]);
-      setCoinResults(lineValue.coins);
-      setCurrentLine(linesRef.current.length);
-      setLastLineInfo({
-        name: LINE_NAMES[linesRef.current.length - 1],
-        type: getYaoTypeName(lineValue.value),
-        isChanging: isChangingYao(lineValue.value),
-      });
-      isAnimatingRef.current = false;
-      setIsAnimating(false);
-
-      // 播放铜钱音效
-      playCoinSound();
-
-      if (linesRef.current.length === 6) {
-        // 卦成，播放铃声
-        playBellSound();
-        const finishTimer = setTimeout(() => finishCasting(linesRef.current), 1200);
-        pendingTimers.current.push(finishTimer);
-      }
-    }, 600);
-    pendingTimers.current.push(timer);
-  }, []); // No deps — uses refs for everything
-
-  const generateOneLineRef = useRef(generateOneLine);
-  generateOneLineRef.current = generateOneLine;
-
-  const handleCoinShake = useCallback(() => {
-    if (linesRef.current.length >= 6 || isAnimatingRef.current) return;
-    generateOneLineRef.current();
-  }, []);
-
-  const finishCasting = (allLines: YaoValue[]) => {
+  const finishCasting = useCallback((allLines: YaoValue[]) => {
     try {
       const s = storeRef.current;
       const result = generateHexagram(allLines);
@@ -291,10 +205,95 @@ export default function CastPage() {
       setShowResult(true);
     } catch (err) {
       console.error('起卦失败:', err);
-      // 出错时也显示结果，让用户至少能看到卦象
       setShowResult(true);
     }
-  };
+  }, []);
+
+  const generateOneLine = useCallback(() => {
+    const lineIndex = linesRef.current.length;
+    if (lineIndex >= 6 || isAnimatingRef.current) return;
+
+    isAnimatingRef.current = true;
+    setIsAnimating(true);
+    const s = storeRef.current;
+    const entropy = createEntropyData(
+      hashString(s.birthDateTime?.toISOString() || ''),
+      s.latitude,
+      s.longitude
+    );
+    entropy.timestampMs = Date.now() + lineIndex;
+    entropy.touchAngle = rotationRef.current;
+    entropy.touchDuration = accumulatedRotationRef.current;
+
+    const seed = generateSeed(entropy);
+    const lineValue = castCoins(seed, lineIndex);
+
+    const timer = setTimeout(() => {
+      linesRef.current = [...linesRef.current, lineValue.value];
+      setLines([...linesRef.current]);
+      setCoinResults(lineValue.coins);
+      setCurrentLine(linesRef.current.length);
+      setLastLineInfo({
+        name: LINE_NAMES[linesRef.current.length - 1],
+        type: getYaoTypeName(lineValue.value),
+        isChanging: isChangingYao(lineValue.value),
+      });
+      isAnimatingRef.current = false;
+      setIsAnimating(false);
+      playCoinSound();
+
+      if (linesRef.current.length === 6) {
+        playBellSound();
+        const finishTimer = setTimeout(() => finishCasting(linesRef.current), 1200);
+        pendingTimers.current.push(finishTimer);
+      }
+    }, 600);
+    pendingTimers.current.push(timer);
+  }, [finishCasting]);
+
+  const handleTaijiPointerDown = useCallback((e: React.PointerEvent) => {
+    isDraggingRef.current = true;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    lastAngleRef.current = Math.atan2(e.clientY - (rect.top + rect.height / 2), e.clientX - (rect.left + rect.width / 2));
+    lastTimeRef.current = Date.now();
+    velocityRef.current = 0;
+  }, []);
+
+  const handleTaijiPointerMove = useCallback((e: React.PointerEvent) => {
+    if (!isDraggingRef.current) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const angle = Math.atan2(e.clientY - (rect.top + rect.height / 2), e.clientX - (rect.left + rect.width / 2));
+    let delta = angle - lastAngleRef.current;
+    if (delta > Math.PI) delta -= 2 * Math.PI;
+    if (delta < -Math.PI) delta += 2 * Math.PI;
+
+    rotationRef.current += delta;
+    accumulatedRotationRef.current += Math.abs(delta);
+    lastAngleRef.current = angle;
+
+    const now = Date.now();
+    const dt = now - lastTimeRef.current;
+    if (dt > 0) velocityRef.current = delta / dt * 16;
+    lastTimeRef.current = now;
+
+    if (accumulatedRotationRef.current >= 2.09 && linesRef.current.length < 6 && !isAnimatingRef.current) {
+      accumulatedRotationRef.current = 0;
+      generateOneLine();
+    }
+  }, [generateOneLine]);
+
+  const handleTaijiPointerUp = useCallback(() => {
+    isDraggingRef.current = false;
+  }, []);
+
+  const handleCoinShake = useCallback(() => {
+    if (linesRef.current.length >= 6 || isAnimatingRef.current) return;
+    generateOneLine();
+  }, [generateOneLine]);
 
   const renderLine = (value: YaoValue | undefined, index: number, isActive: boolean) => {
     const isYang = value === 7 || value === 9;
@@ -310,8 +309,8 @@ export default function CastPage() {
       >
         {value === undefined ? (
           <div className="flex gap-2">
-            <div className="w-10 h-1 bg-[#2a2a3e] rounded" />
-            <div className="w-10 h-1 bg-[#2a2a3e] rounded" />
+            <div className="w-10 h-1 bg-[#3a3a4e] rounded" />
+            <div className="w-10 h-1 bg-[#3a3a4e] rounded" />
           </div>
         ) : isYang ? (
           <div className={`w-24 h-1.5 rounded ${isChanging ? 'bg-gold' : 'bg-[#d4a843]'}`} />
@@ -370,7 +369,7 @@ export default function CastPage() {
             <p className="text-sm text-[#a09880] leading-relaxed mb-2">
               在心中默念您想问的事情
             </p>
-            <p className="text-xs text-[#605040]">
+            <p className="text-xs text-[#807060]">
               心诚则灵，意念专一方能感召天意
             </p>
           </div>
@@ -423,13 +422,13 @@ export default function CastPage() {
               lastLineInfo.isChanging ? 'border-gold/30' : ''
             }`}>
               <span className="text-xs text-[#807060]">{lastLineInfo.name}</span>
-              <span className="text-xs text-[#3a3a4e] mx-2">·</span>
+              <span className="text-xs text-[#807060] mx-2">·</span>
               <span className={`text-xs ${lastLineInfo.isChanging ? 'text-gold' : 'text-[#a09880]'}`}>
                 {lastLineInfo.type}
               </span>
               {lastLineInfo.isChanging && (
                 <>
-                  <span className="text-xs text-[#3a3a4e] mx-2">·</span>
+                  <span className="text-xs text-[#807060] mx-2">·</span>
                   <span className="text-xs text-gold">此为变爻，将生变化</span>
                 </>
               )}
@@ -465,7 +464,7 @@ export default function CastPage() {
               >
                 {isAnimating ? '摇卦中...' : '摇一摇'}
               </button>
-              <p className="text-xs text-[#605040]">点击按钮，心中默念你的问题</p>
+              <p className="text-xs text-[#807060]">点击按钮，心中默念你的问题</p>
             </div>
           )}
 
@@ -482,7 +481,7 @@ export default function CastPage() {
                 role="img"
                 aria-label="太极图 - 拖拽旋转以生成卦爻"
               />
-              <p className="text-xs text-[#605040]">拖拽旋转太极图，每转120°生成一爻</p>
+              <p className="text-xs text-[#807060]">拖拽旋转太极图，每转120°生成一爻</p>
 
               <button
                 onClick={() => { hapticLight(); generateOneLine(); }}
@@ -499,7 +498,7 @@ export default function CastPage() {
 
       {/* 卦成动画 — 在 casting 块外面，status 变化后仍可见 */}
       {showResult && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0a0a14]/95 animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0a0a14]/95 animate-fade-in overflow-y-auto py-8">
           <div className="text-center">
             {/* 依次点亮六爻 */}
             <div className="flex flex-col items-center gap-2 mb-6">
@@ -517,7 +516,7 @@ export default function CastPage() {
                       animation: `fade-in 0.4s ease-out ${i * 0.15 + 0.3}s forwards`,
                     }}
                   >
-                    <span className="text-[10px] text-[#605040] w-6 text-right">{LINE_NAMES[reversedIndex]}</span>
+                    <span className="text-xs text-[#807060] w-6 text-right">{LINE_NAMES[reversedIndex]}</span>
                     {isYang ? (
                       <div className={`w-20 h-1 rounded ${isChanging ? 'bg-gold' : 'bg-[#d4a843]'}`} />
                     ) : (
@@ -527,7 +526,7 @@ export default function CastPage() {
                       </div>
                     )}
                     {isChanging && (
-                      <span className="text-[10px] text-gold">变</span>
+                      <span className="text-xs text-gold">变</span>
                     )}
                   </div>
                 );
@@ -548,7 +547,7 @@ export default function CastPage() {
             <button
               onClick={() => router.push('/result')}
               className="btn-primary px-8 py-3 min-h-[44px]"
-              style={{ opacity: 0, animation: 'fade-in 0.4s ease-out 2s forwards' }}
+              style={{ opacity: 0, animation: 'fade-in 0.4s ease-out 1.2s forwards' }}
             >
               查看结果
             </button>

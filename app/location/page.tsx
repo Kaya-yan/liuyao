@@ -83,7 +83,7 @@ export default function LocationPage() {
             >
               ✓
             </div>
-            <span className={`text-xs ${i === 3 ? 'text-gold' : 'text-[#605040]'}`}>
+            <span className={`text-xs ${i === 3 ? 'text-gold' : 'text-[#807060]'}`}>
               {label}
             </span>
             {i < 3 && <div className="w-8 h-px bg-gold/40" />}
@@ -139,14 +139,14 @@ export default function LocationPage() {
                 <div className="text-xs text-gold mb-3">真太阳时换算</div>
                 <div className="flex items-center justify-center gap-3 text-sm">
                   <div className="text-center">
-                    <div className="text-[10px] text-[#605040] mb-1">北京时间</div>
+                    <div className="text-xs text-[#807060] mb-1">北京时间</div>
                     <div className="text-foreground font-mono">{solarDiff.beijing}</div>
                   </div>
                   <svg className="w-5 h-5 text-gold/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                   </svg>
                   <div className="text-center">
-                    <div className="text-[10px] text-[#605040] mb-1">真太阳时</div>
+                    <div className="text-xs text-[#807060] mb-1">真太阳时</div>
                     <div className="text-gold font-mono">{solarDiff.solar}</div>
                   </div>
                 </div>

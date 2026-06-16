@@ -92,17 +92,20 @@ export default function AnalysisLoading({ onComplete }: AnalysisLoadingProps) {
         duration: 700,
       },
     ];
-  }, [store.bazi, store.benGua, store.longitude]);
+  }, [store.bazi, store.benGua]);
 
   const totalDuration = computedSteps.reduce((sum, s) => sum + s.duration, 0);
 
   // Use refs to prevent animation restart on callback/data changes
   const stepsRef = useRef(computedSteps);
-  stepsRef.current = computedSteps;
   const totalRef = useRef(totalDuration);
-  totalRef.current = totalDuration;
   const onCompleteRef = useRef(onComplete);
-  onCompleteRef.current = onComplete;
+
+  useEffect(() => {
+    stepsRef.current = computedSteps;
+    totalRef.current = totalDuration;
+    onCompleteRef.current = onComplete;
+  }, [computedSteps, totalDuration, onComplete]);
 
   useEffect(() => {
     let stepIndex = 0;
@@ -158,7 +161,7 @@ export default function AnalysisLoading({ onComplete }: AnalysisLoadingProps) {
             </svg>
           </div>
           <h2 className="text-lg font-serif text-gold tracking-wider">卦象推演中</h2>
-          <p className="text-xs text-[#605040] mt-1">基于卜筮正宗体系 · 纳甲六亲六神全息推演</p>
+          <p className="text-xs text-[#807060] mt-1">基于卜筮正宗体系 · 纳甲六亲六神全息推演</p>
         </div>
 
         {/* 进度条 */}
@@ -169,7 +172,7 @@ export default function AnalysisLoading({ onComplete }: AnalysisLoadingProps) {
               style={{ width: `${progress * 100}%` }}
             />
           </div>
-          <div className="text-right text-xs text-[#504838] mt-1">
+          <div className="text-right text-xs text-[#706850] mt-1">
             {Math.round(progress * 100)}%
           </div>
         </div>
@@ -198,7 +201,7 @@ export default function AnalysisLoading({ onComplete }: AnalysisLoadingProps) {
                       ? 'bg-gold/20 text-gold'
                       : isCurrent
                       ? 'bg-gold/10 text-gold border border-gold/20'
-                      : 'bg-[#1a1a2e] text-[#504838]'
+                      : 'bg-[#1a1a2e] text-[#706850]'
                   }`}
                 >
                   {isCompleted ? (
@@ -206,25 +209,25 @@ export default function AnalysisLoading({ onComplete }: AnalysisLoadingProps) {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
                   ) : (
-                    <span className="text-[10px]">{step.icon}</span>
+                    <span className="text-xs">{step.icon}</span>
                   )}
                 </div>
 
                 {/* 文字 */}
                 <div className="flex-1 min-w-0">
                   <div className={`text-sm transition-colors duration-300 ${
-                    isCurrent ? 'text-foreground' : isCompleted ? 'text-[#807060]' : 'text-[#504838]'
+                    isCurrent ? 'text-foreground' : isCompleted ? 'text-[#807060]' : 'text-[#706850]'
                   }`}>
                     {step.label}
                   </div>
                   {isCurrent && (
-                    <div className="text-xs text-[#605040] mt-0.5">
+                    <div className="text-xs text-[#807060] mt-0.5">
                       {step.detail}
                     </div>
                   )}
                   {/* Show computed value when step completes */}
                   {isCompleted && step.computed && (
-                    <div className="text-[11px] text-gold/60 mt-0.5 font-mono truncate">
+                    <div className="text-xs text-gold/60 mt-0.5 font-mono truncate">
                       {step.computed}
                     </div>
                   )}

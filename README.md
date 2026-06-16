@@ -22,13 +22,13 @@
 
 ## 怎么算的
 
-起卦的随机性来源不是伪随机数。摇铜钱的时候，系统同时采集了这些东西：
+起卦的随机性来源不是伪随机数。系统当前会同时采集这些熵源：
 
 - 当前时间戳（毫秒级）
 - 你的经纬度
-- 手指触摸屏幕的轨迹和力度
-- 设备硬件信息
-- 你输入的生辰的哈希值
+- 当前交互输入（例如太极图旋转角度与交互时长）
+- 屏幕与设备环境信息
+- 你输入的生辰哈希值
 
 这些数据混在一起过 FNV-1a 哈希，再喂给 Mulberry32 PRNG。概率分布是老阴 1/8、少阳 3/8、少阴 3/8、老阳 1/8，跟实际铜钱的概率一致。
 
@@ -41,7 +41,7 @@
 ## 跑起来
 
 ```bash
-git clone https://github.com/user/liuyao.git
+git clone https://github.com/Kaya-yan/liuyao.git
 cd liuyao
 npm install
 npm run dev
@@ -51,15 +51,15 @@ npm run dev
 
 部署到 Vercel 零配置，导入仓库就行：
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/user/liuyao)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Kaya-yan/liuyao)
 
 ---
 
 ## 用到的东西
 
-Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS v4 · Zustand · Canvas 2D · framer-motion · lunar-javascript · suncalc
+Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS v4 · Zustand · Canvas 2D · suncalc
 
-纯前端。没有后端，没有数据库，你的生辰八字只存在浏览器内存里，刷新就没了。
+纯前端。没有后端，没有数据库，求测数据不会上传到服务端持久化。页面流程状态刷新后会重置，但占卜历史会保存在浏览器本地 `localStorage`。
 
 ---
 
@@ -71,12 +71,14 @@ app/                    页面
 ├── input/page.tsx      生辰、性别、类别
 ├── location/page.tsx   定位 + 真太阳时
 ├── cast/page.tsx       起卦
-└── result/page.tsx     结果 + 分享
+├── result/page.tsx     结果 + 分享
+└── history/page.tsx    历史记录
 
 lib/
 ├── hexagram/           六爻知识库（八卦、八宫、64卦、纳甲、六亲、六神、飞伏）
 ├── engine/             引擎（八字、真太阳时、五行、熵值、解读）
-└── templates/          话术模板
+├── utils/              历史记录、分享图、音效等浏览器工具
+└── constants.ts        类别标签等常量
 
 stores/                 全局状态
 components/             UI 组件
@@ -105,7 +107,7 @@ types/                  类型定义
 
 **手机上能用吗？**
 
-专门为手机做的。摇铜钱走 DeviceMotion，不支持的浏览器自动变按钮。桌面端可以玩太极图旋转。
+专门为手机做了交互适配。手机默认是“摇铜钱”按钮交互，桌面端可以玩太极图旋转；不同设备会走各自当前支持的起卦路径。
 
 ---
 

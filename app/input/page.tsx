@@ -97,12 +97,12 @@ export default function InputPage() {
                   ? 'bg-gold text-[#0a0a14]'
                   : i < step
                   ? 'bg-gold/30 text-gold'
-                  : 'bg-[#1a1a2e] text-[#504838]'
+                  : 'bg-[#1a1a2e] text-[#706850]'
               }`}
             >
               {i < step ? '✓' : i + 1}
             </div>
-            <span className={`text-xs ${i === step ? 'text-gold' : 'text-[#605040]'}`}>
+            <span className={`text-xs ${i === step ? 'text-gold' : 'text-[#807060]'}`}>
               {label}
             </span>
             {i < 2 && <div className={`w-8 h-px ${i < step ? 'bg-gold/40' : 'bg-[#1a1a2e]'}`} />}
@@ -117,13 +117,13 @@ export default function InputPage() {
           <span className="text-[#a09880]">{formatBirthConfirm()}</span>
           {step > 1 && gender && (
             <>
-              <span className="text-[#3a3a4e]">·</span>
+              <span className="text-[#504838]">·</span>
               <span className="text-[#a09880]">{gender === 'male' ? '男（阳）' : '女（阴）'}</span>
             </>
           )}
           {step > 1 && category && (
             <>
-              <span className="text-[#3a3a4e]">·</span>
+              <span className="text-[#504838]">·</span>
               <span className="text-[#a09880]">{CATEGORIES.find(c => c.key === category)?.label}</span>
             </>
           )}
@@ -163,12 +163,12 @@ export default function InputPage() {
                 ))}
               </select>
               {shichen === 'unknown' ? (
-                <p className="text-[10px] text-gold/60 mt-1.5">
+                <p className="text-xs text-gold/60 mt-1.5">
                   没关系，系统会按午时估算，对整体结果影响不大
                 </p>
               ) : (
-                <p className="text-[10px] text-[#504838] mt-1.5">
-                  记不清的话选"不确定"也可以
+                <p className="text-xs text-[#706850] mt-1.5">
+                  记不清的话选“不确定”也可以
                 </p>
               )}
             </div>
@@ -207,7 +207,7 @@ export default function InputPage() {
               >
                 <div className="text-2xl mb-1">{opt.symbol}</div>
                 <div className="text-base font-serif text-foreground">{opt.label}</div>
-                <div className="text-[10px] text-[#706850]">{opt.desc}</div>
+                <div className="text-xs text-[#807060]">{opt.desc}</div>
               </button>
             ))}
           </div>
@@ -266,14 +266,14 @@ export default function InputPage() {
               aria-describedby="question-hint"
               className="w-full px-4 py-3 bg-[#0a0a14] border border-dark-border rounded-lg text-foreground focus:border-gold focus:outline-none transition-colors resize-none text-sm leading-relaxed"
             />
-            <div id="question-hint" className="text-right text-[10px] text-[#504838]">
+            <div id="question-hint" className="text-right text-xs text-[#706850]">
               {question.length}/200
             </div>
 
             {/* 快捷问题 */}
             {suggestedQuestions.length > 0 && (
               <div>
-                <div className="text-xs text-[#605040] mb-2">或者试试这些问题：</div>
+                <div className="text-xs text-[#807060] mb-2">或者试试这些问题：</div>
                 <div className="flex flex-wrap gap-2">
                   {suggestedQuestions.map((q) => (
                     <button

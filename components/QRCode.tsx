@@ -1,10 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 
 interface QRCodeProps {
   size?: number;
   className?: string;
+}
+
+function subscribeToOrigin() {
+  return () => {};
+}
+
+function getClientOrigin() {
+  return window.location.origin;
+}
+
+function getServerOrigin() {
+  return '';
 }
 
 /**
@@ -12,12 +24,8 @@ interface QRCodeProps {
  * 使用外部 API 生成，失败时显示文字降级
  */
 export default function QRCode({ size = 60, className = '' }: QRCodeProps) {
-  const [origin, setOrigin] = useState('');
+  const origin = useSyncExternalStore(subscribeToOrigin, getClientOrigin, getServerOrigin);
   const [error, setError] = useState(false);
-
-  useEffect(() => {
-    setOrigin(window.location.origin);
-  }, []);
 
   if (!origin || error) {
     // 降级：显示文字
