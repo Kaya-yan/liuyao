@@ -49,7 +49,7 @@ export function calculateTrueSolarTime(
  * 获取时辰索引（0-11）
  * 子时(23-1)=0, 丑时(1-3)=1, 寅时(3-5)=2, ...
  */
-export function getShichenIndex(hour: number, minute: number): number {
+export function getShichenIndex(hour: number): number {
   // 23:00-00:59 → 子时(0)
   // 01:00-02:59 → 丑时(1)
   // ...

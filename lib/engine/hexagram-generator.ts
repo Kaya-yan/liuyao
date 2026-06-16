@@ -2,8 +2,7 @@ import { YaoValue, HexagramData, TrigramName } from '@/types/hexagram';
 import { EntropyData } from '@/types/divination';
 import { generateSixLines } from './entropy';
 import { getHexagramById } from '@/lib/hexagram/data';
-import { findPalaceInfo, findHexagramId } from '@/lib/hexagram/palaces';
-import { trigramList } from '@/lib/hexagram/trigrams';
+import { findHexagramId } from '@/lib/hexagram/palaces';
 
 /**
  * 卦象生成器

@@ -14,8 +14,8 @@
   --color-dark-border: rgba(201, 168, 76, 0.12);
   --color-text-secondary: #8a7e6a;
   --color-text-dim: #5a5244;
-  --font-sans: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
-  --font-serif: "Noto Serif SC", "STSong", "SimSun", serif;
+  --font-sans: var(--font-noto-sans-sc), "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-serif: var(--font-noto-serif-sc), "STSong", "SimSun", serif;
 }
 
 * { box-sizing: border-box; }

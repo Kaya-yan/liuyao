@@ -1,5 +1,20 @@
 import type { Metadata } from "next";
+import { Noto_Sans_SC, Noto_Serif_SC } from "next/font/google";
 import "./globals.css";
+
+const notoSansSC = Noto_Sans_SC({
+  weight: ["300", "400", "500", "700"],
+  display: "swap",
+  preload: false,
+  variable: "--font-noto-sans-sc",
+});
+
+const notoSerifSC = Noto_Serif_SC({
+  weight: ["400", "600", "700"],
+  display: "swap",
+  preload: false,
+  variable: "--font-noto-serif-sc",
+});
 
 export const metadata: Metadata = {
   title: "天机六爻 — 古老的智慧，为你照亮前路",
@@ -13,15 +28,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-CN" className="h-full antialiased">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+    <html lang="zh-CN" className={`${notoSansSC.variable} ${notoSerifSC.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <a
           href="#main-content"

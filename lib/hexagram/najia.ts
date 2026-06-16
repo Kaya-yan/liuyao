@@ -1,4 +1,4 @@
-import { HexagramData, NajiaLine, WuxingElement } from '@/types/hexagram';
+import { HexagramData, NajiaLine } from '@/types/hexagram';
 import { trigrams } from './trigrams';
 import { palaces } from './palaces';
 import { dizhiToWuxing } from '@/lib/engine/wuxing';

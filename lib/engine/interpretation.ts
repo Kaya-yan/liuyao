@@ -1,4 +1,4 @@
-import { HexagramData, YaoValue, LiuQinType, LiuShenType } from '@/types/hexagram';
+import { HexagramData, YaoValue, LiuQinType } from '@/types/hexagram';
 import { CategoryType, Bazi } from '@/types/divination';
 import { calculateNajia } from '@/lib/hexagram/najia';
 import { calculateAllLiuqin } from '@/lib/hexagram/liuqin';
@@ -8,7 +8,7 @@ import { findFeifu } from '@/lib/hexagram/feifu';
 import { calculateKongwang, isKongwang, getKongwangText } from '@/lib/hexagram/kongwang';
 import { calculateHugua } from '@/lib/hexagram/huyao';
 import { analyzeDongYao, checkFanyinFuyin } from '@/lib/hexagram/dongyao';
-import { tianganToWuxing, getWuxingStrength } from '@/lib/engine/wuxing';
+import { tianganToWuxing } from '@/lib/engine/wuxing';
 
 /**
  * 解读文案生成引擎
@@ -124,7 +124,7 @@ function determineYongShen(category: CategoryType, gender: 'male' | 'female' = '
   }
 }
 
-function generateArchetype(hexagram: HexagramData, dayTiangan: string): string {
+function generateArchetype(hexagram: HexagramData): string {
   const palace = palaces[hexagram.palaceId];
   const palaceName = palace.name.charAt(0); // 乾、坤、坎...
   const archetypes = PALACE_ARCHETYPES[palaceName] || PALACE_ARCHETYPES['乾'];
@@ -135,7 +135,6 @@ function generateArchetype(hexagram: HexagramData, dayTiangan: string): string {
 function generateVerdict(hexagram: HexagramData, category: CategoryType, changingLines: number[]): string {
   const catName = CATEGORY_NAMES[category];
   const hasChange = changingLines.length > 0;
-  const palace = palaces[hexagram.palaceId];
 
   if (hasChange) {
     return `${hexagram.name}动变，${catName}运势正在酝酿转变`;
@@ -181,7 +180,6 @@ function generateNarrative(ctx: InterpretationContext): string[] {
 
   // 第二段：用神分析（用通俗语言）
   if (yongshenIndex >= 0) {
-    const yn = najia[yongshenIndex];
     const isChanging = changingLines.includes(yongshenIndex);
 
     if (isChanging) {
@@ -230,7 +228,7 @@ function generateClosing(changingLines: number[], hexagramId: number): string {
  * 生成结构化解读（新）
  */
 export function generateStructuredInterpretation(ctx: InterpretationContext): StructuredInterpretation {
-  const archetype = generateArchetype(ctx.hexagram, ctx.dayTiangan);
+  const archetype = generateArchetype(ctx.hexagram);
   const verdict = generateVerdict(ctx.hexagram, ctx.category, ctx.changingLines);
   const personality = generatePersonality(ctx.dayTiangan, ctx.hexagram);
   const narrative = generateNarrative(ctx);

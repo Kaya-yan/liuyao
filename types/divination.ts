@@ -1,4 +1,4 @@
-import { HexagramData, YaoLine, WuxingElement, LiuQinType, LiuShenType, NajiaLine } from './hexagram';
+import { HexagramData, YaoLine, LiuQinType, LiuShenType, NajiaLine } from './hexagram';
 
 export type CategoryType = 'caiyun' | 'zhengyuan' | 'shiye' | 'jiankang' | 'zonghe';
 
